@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitLab Data Exporter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .field-item {
+            transition: all 0.2s ease;
+        }
+        
+        .field-item:hover {
+            background-color: #f3f4f6;
+            transform: translateY(-2px);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .preview-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Header -->
+            <div class="bg-blue-600 text-white px-6 py-4">
+                <h1 class="text-2xl font-bold flex items-center">
+                    <i class="fab fa-gitlab mr-3"></i>
+                    GitLab Data Exporter
+                </h1>
+                <p class="text-blue-100 mt-1">Export GitLab project data to Excel with custom mapping</p>
+            </div>
+            
+            <!-- Progress Steps -->
+            <div class="px-6 py-4 border-b">
+                <div class="flex justify-between items-center">
+                    <div class="step flex flex-col items-center" data-step="1">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">1</div>
+                        <span class="mt-2 text-sm font-medium">Connect</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
+                    <div class="step flex flex-col items-center" data-step="2">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">2</div>
+                        <span class="mt-2 text-sm font-medium text-gray-500">Select Data</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
+                    <div class="step flex flex-col items-center" data-step="3">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">3</div>
+                        <span class="mt-2 text-sm font-medium text-gray-500">Map Fields</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
+                    <div class="step flex flex-col items-center" data-step="4">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">4</div>
+                        <span class="mt-2 text-sm font-medium text-gray-500">Export</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="p-6">
+                <!-- Tab 1: Connect to GitLab -->
+                <div id="tab-1" class="tab-content active">
+                    <h2 class="text-xl font-semibold mb-4">Connect to GitLab</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <div class="mb-4">
+                                <label for="api-key" class="block text-sm font-medium text-gray-700 mb-1">GitLab API Key</label>
+                                <div class="relative">
+                                    <input type="password" id="api-key" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your GitLab API key">
+                                    <button id="toggle-api-key" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
+                                        <i class="far fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">You can generate an API key in your GitLab profile settings</p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="gitlab-url" class="block text-sm font-medium text-gray-700 mb-1">GitLab Instance URL</label>
+                                <input type="url" id="gitlab-url" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="https://gitlab.com" value="https://gitlab.com">
+                                <p class="mt-1 text-xs text-gray-500">For self-hosted GitLab, enter your instance URL</p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="project-id" class="block text-sm font-medium text-gray-700 mb-1">Project ID or Path</label>
+                                <input type="text" id="project-id" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="group/project or numeric ID">
+                                <p class="mt-1 text-xs text-gray-500">You can find this in the project's URL</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h3 class="font-medium text-gray-800 mb-2">Connection Help</h3>
+                            <ul class="text-sm text-gray-600 space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <span>For GitLab.com, use the default URL (https://gitlab.com)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <span>For self-hosted instances, enter your GitLab URL (e.g., https://gitlab.example.com)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <span>API keys require at least "read_api" and "read_repository" permissions</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <span>Project path should be URL-encoded (e.g., "my%2Fproject" for "my/project")</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end">
+                        <button id="connect-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center">
+                            <span>Connect</span>
+                            <i class="fas fa-plug ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tab 2: Select Data -->
+                <div id="tab-2" class="tab-content">
+                    <h2 class="text-xl font-semibold mb-4">Select Data to Export</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Data Type</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="data-type" value="issues" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-gray-700">Issues</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="data-type" value="merge_requests" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-gray-700">Merge Requests</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="data-type" value="pipelines" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-gray-700">Pipelines</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="data-filters" class="block text-sm font-medium text-gray-700 mb-1">Filters (Optional)</label>
+                                <textarea id="data-filters" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 h-24" placeholder="Enter filter parameters as JSON (e.g., {'state': 'opened', 'labels': 'bug'})"></textarea>
+                                <p class="mt-1 text-xs text-gray-500">Leave empty to fetch all items. Refer to GitLab API docs for available filters.</p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
+                                <div class="space-y-2">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="include-comments" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-gray-700">Include comments/discussions</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="include-labels" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-gray-700">Include labels</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="include-assignees" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-gray-700">Include assignees</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h3 class="font-medium text-gray-800 mb-2">Data Selection Tips</h3>
+                            <ul class="text-sm text-gray-600 space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <span>Select "Issues" to export your project's issue tracker data</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <span>Use filters to narrow down the data (e.g., only open issues)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <span>For large projects, consider adding filters to limit results</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <span>Comments will be exported as a separate sheet</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-between">
+                        <button id="back-to-connect" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Back
+                        </button>
+                        <button id="fetch-data-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center">
+                            <span>Fetch Data</span>
+                            <i class="fas fa-database ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tab 3: Map Fields -->
+                <div id="tab-3" class="tab-content">
+                    <h2 class="text-xl font-semibold mb-4">Map Fields to Excel</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Structure</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="export-structure" value="single-sheet" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-gray-700">Single Sheet (All items)</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="export-structure" value="multi-sheet" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-gray-700">Multiple Sheets (One per item)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div id="template-upload-section" class="mb-4 hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Excel Template (Optional)</label>
+                                <div class="mt-1 flex items-center">
+                                    <input type="file" id="excel-template" accept=".xlsx,.xls" class="hidden">
+                                    <label for="excel-template" class="cursor-pointer px-4 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        Choose File
+                                    </label>
+                                    <span id="template-file-name" class="ml-2 text-sm text-gray-500">No file chosen</span>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">Upload an Excel template to use as the base for your export</p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Available Fields</label>
+                                <div class="border rounded-lg p-2 h-64 overflow-y-auto" id="available-fields">
+                                    <div class="text-center py-10 text-gray-400">
+                                        <i class="fas fa-database fa-2x mb-2"></i>
+                                        <p>Connect and fetch data to see available fields</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full">
+                                <h3 class="font-medium text-gray-800 mb-2">Field Mapping</h3>
+                                <div id="mapping-container" class="space-y-3">
+                                    <div class="text-sm text-gray-500 italic">No fields selected yet</div>
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-2">Preview</h4>
+                                    <div class="preview-table border rounded-lg overflow-hidden">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Excel Cell</th>
+                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GitLab Field</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="mapping-preview" class="bg-white divide-y divide-gray-200">
+                                                <tr>
+                                                    <td colspan="2" class="px-3 py-2 text-sm text-gray-500 text-center">No mappings yet</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-between">
+                        <button id="back-to-select" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Back
+                        </button>
+                        <button id="preview-data-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center">
+                            <span>Preview Data</span>
+                            <i class="fas fa-eye ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tab 4: Export -->
+                <div id="tab-4" class="tab-content">
+                    <h2 class="text-xl font-semibold mb-4">Export Data</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2">
+                            <div class="bg-white border rounded-lg overflow-hidden">
+                                <div class="p-4 border-b">
+                                    <h3 class="font-medium text-gray-800">Export Summary</h3>
+                                </div>
+                                <div class="divide-y divide-gray-200">
+                                    <div class="px-4 py-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-sm font-medium text-gray-600">Project:</span>
+                                            <span id="export-project" class="text-sm text-gray-800">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-sm font-medium text-gray-600">Data Type:</span>
+                                            <span id="export-data-type" class="text-sm text-gray-800">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-sm font-medium text-gray-600">Items to Export:</span>
+                                            <span id="export-item-count" class="text-sm text-gray-800">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-sm font-medium text-gray-600">Fields Mapped:</span>
+                                            <span id="export-field-count" class="text-sm text-gray-800">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-sm font-medium text-gray-600">Export Structure:</span>
+                                            <span id="export-structure" class="text-sm text-gray-800">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label for="export-filename" class="block text-sm font-medium text-gray-700 mb-1">File Name</label>
+                                <input type="text" id="export-filename" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="gitlab_export.xlsx" value="gitlab_export.xlsx">
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
+                                <div class="space-y-2">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="format-dates" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-gray-700">Format dates in Excel</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="include-headers" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-gray-700">Include column headers</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="auto-size-columns" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-gray-700">Auto-size columns</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full">
+                                <h3 class="font-medium text-gray-800 mb-2">Data Preview</h3>
+                                <div class="preview-table border rounded-lg overflow-hidden bg-white">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr id="preview-headers">
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loading...</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="preview-data" class="bg-white divide-y divide-gray-200">
+                                            <tr>
+                                                <td class="px-3 py-2 text-sm text-gray-500">Select fields and preview to see data</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-between">
+                        <button id="back-to-map" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Back
+                        </button>
+                        <button id="export-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center">
+                            <span>Export to Excel</span>
+                            <i class="fas fa-file-excel ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        const state = {
+            currentStep: 1,
+            apiKey: '',
+            gitlabUrl: 'https://gitlab.com',
+            projectId: '',
+            dataType: 'issues',
+            filters: {},
+            includeComments: false,
+            includeLabels: true,
+            includeAssignees: true,
+            exportStructure: 'single-sheet',
+            availableFields: [],
+            selectedFields: [],
+            mappedFields: {},
+            fetchedData: [],
+            previewData: [],
+            templateFile: null
+        };
+
+        // DOM elements
+        const tabs = {
+            1: document.getElementById('tab-1'),
+            2: document.getElementById('tab-2'),
+            3: document.getElementById('tab-3'),
+            4: document.getElementById('tab-4')
+        };
+
+        const steps = document.querySelectorAll('.step');
+        const apiKeyInput = document.getElementById('api-key');
+        const toggleApiKeyBtn = document.getElementById('toggle-api-key');
+        const gitlabUrlInput = document.getElementById('gitlab-url');
+        const projectIdInput = document.getElementById('project-id');
+        const connectBtn = document.getElementById('connect-btn');
+        const backToConnectBtn = document.getElementById('back-to-connect');
+        const fetchDataBtn = document.getElementById('fetch-data-btn');
+        const backToSelectBtn = document.getElementById('back-to-select');
+        const previewDataBtn = document.getElementById('preview-data-btn');
+        const backToMapBtn = document.getElementById('back-to-map');
+        const exportBtn = document.getElementById('export-btn');
+        const availableFieldsContainer = document.getElementById('available-fields');
+        const mappingContainer = document.getElementById('mapping-container');
+        const mappingPreview = document.getElementById('mapping-preview');
+        const previewHeaders = document.getElementById('preview-headers');
+        const previewData = document.getElementById('preview-data');
+        const exportProject = document.getElementById('export-project');
+        const exportDataType = document.getElementById('export-data-type');
+        const exportItemCount = document.getElementById('export-item-count');
+        const exportFieldCount = document.getElementById('export-field-count');
+        const exportStructure = document.getElementById('export-structure');
+        const excelTemplateInput = document.getElementById('excel-template');
+        const templateFileName = document.getElementById('template-file-name');
+        const templateUploadSection = document.getElementById('template-upload-section');
+
+        // Event listeners
+        toggleApiKeyBtn.addEventListener('click', toggleApiKeyVisibility);
+        connectBtn.addEventListener('click', connectToGitLab);
+        backToConnectBtn.addEventListener('click', () => navigateToStep(1));
+        fetchDataBtn.addEventListener('click', fetchData);
+        backToSelectBtn.addEventListener('click', () => navigateToStep(2));
+        previewDataBtn.addEventListener('click', previewDataHandler);
+        backToMapBtn.addEventListener('click', () => navigateToStep(3));
+        exportBtn.addEventListener('click', exportToExcel);
+        
+        document.querySelectorAll('input[name="data-type"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                state.dataType = e.target.value;
+            });
+        });
+        
+        document.querySelectorAll('input[name="export-structure"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                state.exportStructure = e.target.value;
+                if (state.exportStructure === 'multi-sheet') {
+                    templateUploadSection.classList.remove('hidden');
+                } else {
+                    templateUploadSection.classList.add('hidden');
+                }
+            });
+        });
+        
+        excelTemplateInput.addEventListener('change', handleTemplateUpload);
+
+        // Functions
+        function toggleApiKeyVisibility() {
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                toggleApiKeyBtn.innerHTML = '<i class="far fa-eye-slash"></i>';
+            } else {
+                apiKeyInput.type = 'password';
+                toggleApiKeyBtn.innerHTML = '<i class="far fa-eye"></i>';
+            }
+        }
+
+        function navigateToStep(step) {
+            // Validate before proceeding
+            if (step === 2 && !validateConnection()) return;
+            if (step === 3 && !validateDataSelection()) return;
+            if (step === 4 && !validateFieldMapping()) return;
+            
+            // Update UI
+            state.currentStep = step;
+            
+            // Hide all tabs
+            Object.values(tabs).forEach(tab => tab.classList.remove('active'));
+            
+            // Show current tab
+            tabs[step].classList.add('active');
+            
+            // Update progress steps
+            steps.forEach(stepEl => {
+                const stepNumber = parseInt(stepEl.dataset.step);
+                const circle = stepEl.querySelector('div');
+                const text = stepEl.querySelector('span');
+                
+                if (stepNumber < step) {
+                    circle.classList.remove('bg-gray-200', 'text-gray-600');
+                    circle.classList.add('bg-blue-600', 'text-white');
+                    text.classList.remove('text-gray-500');
+                    text.classList.add('text-gray-700');
+                } else if (stepNumber === step) {
+                    circle.classList.remove('bg-gray-200', 'text-gray-600');
+                    circle.classList.add('bg-blue-600', 'text-white');
+                    text.classList.remove('text-gray-500');
+                    text.classList.add('text-gray-700');
+                } else {
+                    circle.classList.remove('bg-blue-600', 'text-white');
+                    circle.classList.add('bg-gray-200', 'text-gray-600');
+                    text.classList.remove('text-gray-700');
+                    text.classList.add('text-gray-500');
+                }
+            });
+            
+            // Special handling for certain steps
+            if (step === 3) {
+                renderAvailableFields();
+            } else if (step === 4) {
+                updateExportSummary();
+                renderPreviewData();
+            }
+        }
+
+        function validateConnection() {
+            state.apiKey = apiKeyInput.value.trim();
+            state.gitlabUrl = gitlabUrlInput.value.trim();
+            state.projectId = projectIdInput.value.trim();
+            
+            if (!state.apiKey) {
+                alert('Please enter your GitLab API key');
+                return false;
+            }
+            
+            if (!state.gitlabUrl) {
+                alert('Please enter your GitLab instance URL');
+                return false;
+            }
+            
+            if (!state.projectId) {
+                alert('Please enter the project ID or path');
+                return false;
+            }
+            
+            return true;
+        }
+
+        function validateDataSelection() {
+            try {
+                const filtersText = document.getElementById('data-filters').value.trim();
+                state.filters = filtersText ? JSON.parse(filtersText) : {};
+            } catch (e) {
+                alert('Invalid JSON format for filters');
+                return false;
+            }
+            
+            state.includeComments = document.getElementById('include-comments').checked;
+            state.includeLabels = document.getElementById('include-labels').checked;
+            state.includeAssignees = document.getElementById('include-assignees').checked;
+            
+            return true;
+        }
+
+        function validateFieldMapping() {
+            if (state.selectedFields.length === 0) {
+                alert('Please select at least one field to export');
+                return false;
+            }
+            
+            return true;
+        }
+
+        function connectToGitLab() {
+            if (!validateConnection()) return;
+            
+            // Show loading state
+            connectBtn.disabled = true;
+            connectBtn.innerHTML = '<div class="loading-spinner"></div>';
+            
+            // Simulate API connection (in a real app, this would be an actual API call)
+            setTimeout(() => {
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '<span>Connected</span><i class="fas fa-check ml-2"></i>';
+                
+                // Proceed to next step
+                navigateToStep(2);
+                
+                // Reset button after delay
+                setTimeout(() => {
+                    connectBtn.innerHTML = '<span>Connect</span><i class="fas fa-plug ml-2"></i>';
+                }, 1500);
+            }, 1500);
+        }
+
+        function fetchData() {
+            if (!validateDataSelection()) return;
+            
+            // Show loading state
+            fetchDataBtn.disabled = true;
+            fetchDataBtn.innerHTML = '<div class="loading-spinner"></div>';
+            
+            // Simulate API call to fetch data
+            setTimeout(() => {
+                // Sample data structure for issues (would come from API in real app)
+                state.fetchedData = [
+                    {
+                        id: 1,
+                        iid: 1,
+                        title: "Sample Issue 1",
+                        description: "This is a sample issue description",
+                        state: "opened",
+                        created_at: "2023-01-15T10:00:00Z",
+                        updated_at: "2023-01-20T14:30:00Z",
+                        due_date: "2023-02-01",
+                        labels: ["bug", "high priority"],
+                        assignees: [
+                            { id: 101, name: "John Doe", username: "johndoe" },
+                            { id: 102, name: "Jane Smith", username: "janesmith" }
+                        ],
+                        author: { id: 100, name: "Admin User", username: "admin" },
+                        web_url: "https://gitlab.com/sample/project/-/issues/1"
+                    },
+                    {
+                        id: 2,
+                        iid: 2,
+                        title: "Sample Issue 2",
+                        description: "Another sample issue",
+                        state: "closed",
+                        created_at: "2023-01-10T09:15:00Z",
+                        updated_at: "2023-01-12T11:45:00Z",
+                        due_date: null,
+                        labels: ["feature"],
+                        assignees: [
+                            { id: 102, name: "Jane Smith", username: "janesmith" }
+                        ],
+                        author: { id: 103, name: "Dev User", username: "devuser" },
+                        web_url: "https://gitlab.com/sample/project/-/issues/2"
+                    }
+                ];
+                
+                // Generate available fields from the first item
+                if (state.fetchedData.length > 0) {
+                    generateAvailableFields(state.fetchedData[0]);
+                }
+                
+                fetchDataBtn.disabled = false;
+                fetchDataBtn.innerHTML = '<span>Data Fetched</span><i class="fas fa-check ml-2"></i>';
+                
+                // Proceed to next step
+                navigateToStep(3);
+                
+                // Reset button after delay
+                setTimeout(() => {
+                    fetchDataBtn.innerHTML = '<span>Fetch Data</span><i class="fas fa-database ml-2"></i>';
+                }, 1500);
+            }, 2000);
+        }
+
+        function generateAvailableFields(sampleItem) {
+            state.availableFields = [];
+            
+            // Basic fields
+            for (const key in sampleItem) {
+                if (typeof sampleItem[key] !== 'object' && !Array.isArray(sampleItem[key])) {
+                    state.availableFields.push({
+                        name: key,
+                        label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        type: typeof sampleItem[key],
+                        path: key
+                    });
+                }
+            }
+            
+            // Nested fields (author)
+            if (sampleItem.author) {
+                for (const key in sampleItem.author) {
+                    state.availableFields.push({
+                        name: `author.${key}`,
+                        label: `Author ${key.replace(/_/g, ' ')}`.replace(/\b\w/g, l => l.toUpperCase()),
+                        type: typeof sampleItem.author[key],
+                        path: `author.${key}`
+                    });
+                }
+            }
+            
+            // Special fields (labels as string)
+            if (sampleItem.labels) {
+                state.availableFields.push({
+                    name: 'labels_string',
+                    label: 'Labels (Comma Separated)',
+                    type: 'string',
+                    path: 'labels'
+                });
+            }
+            
+            // Special fields (assignees as string)
+            if (sampleItem.assignees) {
+                state.availableFields.push({
+                    name: 'assignees_string',
+                    label: 'Assignees (Comma Separated)',
+                    type: 'string',
+                    path: 'assignees'
+                });
+            }
+            
+            // Add any custom fields you want to expose
+            state.availableFields.push({
+                name: 'web_url',
+                label: 'Web URL',
+                type: 'string',
+                path: 'web_url'
+            });
+        }
+
+        function renderAvailableFields() {
+            availableFieldsContainer.innerHTML = '';
+            
+            if (state.availableFields.length === 0) {
+                availableFieldsContainer.innerHTML = `
+                    <div class="text-center py-10 text-gray-400">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <p>No fields available. Please fetch data first.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const fieldGroups = groupFields(state.availableFields);
+            
+            for (const group in fieldGroups) {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'mb-4';
+                groupEl.innerHTML = `
+                    <h4 class="text-sm font-medium text-gray-700 mb-2 px-2">${group}</h4>
+                    <div class="space-y-1">
+                        ${fieldGroups[group].map(field => `
+                            <div class="field-item flex items-center px-3 py-2 rounded cursor-pointer" data-field="${field.name}">
+                                <input type="checkbox" id="field-${field.name}" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                <label for="field-${field.name}" class="ml-2 text-sm text-gray-700 cursor-pointer flex-1">${field.label}</label>
+                                <span class="text-xs text-gray-500">${field.type}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                availableFieldsContainer.appendChild(groupEl);
+                
+                // Add event listeners to checkboxes
+                fieldGroups[group].forEach(field => {
+                    const checkbox = groupEl.querySelector(`#field-${field.name}`);
+                    checkbox.addEventListener('change', (e) => {
+                        if (e.target.checked) {
+                            addFieldToMapping(field);
+                        } else {
+                            removeFieldFromMapping(field.name);
+                        }
+                    });
+                    
+                    // Check if field is already selected
+                    if (state.selectedFields.some(f => f.name === field.name)) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+        }
+
+        function groupFields(fields) {
+            const groups = {
+                'Basic Fields': [],
+                'Author Fields': [],
+                'Special Fields': []
+            };
+            
+            fields.forEach(field => {
+                if (field.name.startsWith('author.')) {
+                    groups['Author Fields'].push(field);
+                } else if (field.name.includes('_string') || field.name === 'web_url') {
+                    groups['Special Fields'].push(field);
+                } else {
+                    groups['Basic Fields'].push(field);
+                }
+            });
+            
+            // Remove empty groups
+            for (const group in groups) {
+                if (groups[group].length === 0) {
+                    delete groups[group];
+                }
+            }
+            
+            return groups;
+        }
+
+        function addFieldToMapping(field) {
+            if (!state.selectedFields.some(f => f.name === field.name)) {
+                state.selectedFields.push(field);
+                state.mappedFields[field.name] = {
+                    excelCell: '', // Will be set by user
+                    gitlabField: field.path,
+                    fieldName: field.name,
+                    fieldLabel: field.label
+                };
+                renderFieldMapping();
+            }
+        }
+
+        function removeFieldFromMapping(fieldName) {
+            state.selectedFields = state.selectedFields.filter(f => f.name !== fieldName);
+            delete state.mappedFields[fieldName];
+            renderFieldMapping();
+        }
+
+        function renderFieldMapping() {
+            mappingContainer.innerHTML = '';
+            
+            if (state.selectedFields.length === 0) {
+                mappingContainer.innerHTML = '<div class="text-sm text-gray-500 italic">No fields selected yet</div>';
+                mappingPreview.innerHTML = '<tr><td colspan="2" class="px-3 py-2 text-sm text-gray-500 text-center">No mappings yet</td></tr>';
+                return;
+            }
+            
+            // Render mapping controls
+            state.selectedFields.forEach(field => {
+                const fieldEl = document.createElement('div');
+                fieldEl.className = 'flex items-center space-x-3';
+                fieldEl.innerHTML = `
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-500 mb-1">GitLab Field</label>
+                        <div class="text-sm font-medium text-gray-800">${field.label}</div>
+                    </div>
+                    <div class="flex-1">
+                        <label for="excel-cell-${field.name}" class="block text-xs font-medium text-gray-500 mb-1">Excel Cell</label>
+                        <input type="text" id="excel-cell-${field.name}" class="w-full px-2 py-1 border rounded text-sm" placeholder="A1, B2, etc." value="${state.mappedFields[field.name].excelCell || ''}">
+                    </div>
+                    <button class="text-red-500 hover:text-red-700" data-field="${field.name}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                mappingContainer.appendChild(fieldEl);
+                
+                // Add event listeners
+                const input = fieldEl.querySelector(`#excel-cell-${field.name}`);
+                input.addEventListener('change', (e) => {
+                    state.mappedFields[field.name].excelCell = e.target.value.toUpperCase();
+                    renderMappingPreview();
+                });
+                
+                const removeBtn = fieldEl.querySelector('button');
+                removeBtn.addEventListener('click', () => {
+                    removeFieldFromMapping(field.name);
+                    // Also uncheck the checkbox in available fields
+                    const checkbox = document.querySelector(`#field-${field.name}`);
+                    if (checkbox) checkbox.checked = false;
+                });
+            });
+            
+            renderMappingPreview();
+        }
+
+        function renderMappingPreview() {
+            mappingPreview.innerHTML = '';
+            
+            for (const fieldName in state.mappedFields) {
+                const field = state.mappedFields[fieldName];
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-3 py-2 text-sm font-medium text-gray-900">${field.excelCell || 'Not set'}</td>
+                    <td class="px-3 py-2 text-sm text-gray-500">${field.fieldLabel}</td>
+                `;
+                mappingPreview.appendChild(row);
+            }
+        }
+
+        function previewDataHandler() {
+            if (!validateFieldMapping()) return;
+            
+            // Show loading state
+            previewDataBtn.disabled = true;
+            previewDataBtn.innerHTML = '<div class="loading-spinner"></div>';
+            
+            // Simulate data processing
+            setTimeout(() => {
+                // Generate preview data
+                generatePreviewData();
+                
+                previewDataBtn.disabled = false;
+                previewDataBtn.innerHTML = '<span>Preview Generated</span><i class="fas fa-check ml-2"></i>';
+                
+                // Proceed to next step
+                navigateToStep(4);
+                
+                // Reset button after delay
+                setTimeout(() => {
+                    previewDataBtn.innerHTML = '<span>Preview Data</span><i class="fas fa-eye ml-2"></i>';
+                }, 1500);
+            }, 1000);
+        }
+
+        function generatePreviewData() {
+            state.previewData = [];
+            
+            // For preview, just use the first 5 items
+            const itemsToPreview = state.fetchedData.slice(0, 5);
+            
+            itemsToPreview.forEach(item => {
+                const previewItem = {};
+                
+                for (const fieldName in state.mappedFields) {
+                    const mapping = state.mappedFields[fieldName];
+                    previewItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
+                }
+                
+                state.previewData.push(previewItem);
+            });
+        }
+
+        function getFieldValue(item, path) {
+            // Handle special fields
+            if (path === 'labels') {
+                return item.labels ? item.labels.join(', ') : '';
+            }
+            
+            if (path === 'assignees') {
+                return item.assignees ? item.assignees.map(a => a.name).join(', ') : '';
+            }
+            
+            // Handle nested fields
+            const parts = path.split('.');
+            let value = item;
+            
+            for (const part of parts) {
+                if (value && value.hasOwnProperty(part)) {
+                    value = value[part];
+                } else {
+                    value = null;
+                    break;
+                }
+            }
+            
+            return value !== null ? value : '';
+        }
+
+        function updateExportSummary() {
+            exportProject.textContent = `${state.projectId}`;
+            exportDataType.textContent = state.dataType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            exportItemCount.textContent = state.fetchedData.length;
+            exportFieldCount.textContent = state.selectedFields.length;
+            exportStructure.textContent = state.exportStructure === 'single-sheet' ? 'Single Sheet' : 'Multiple Sheets';
+        }
+
+        function renderPreviewData() {
+            previewHeaders.innerHTML = '';
+            previewData.innerHTML = '';
+            
+            if (state.previewData.length === 0) {
+                previewData.innerHTML = '<tr><td class="px-3 py-2 text-sm text-gray-500">No preview data available</td></tr>';
+                return;
+            }
+            
+            // Create headers from first item's keys
+            const headers = Object.keys(state.previewData[0]);
+            
+            // Render headers
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.className = 'px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            previewHeaders.appendChild(headerRow);
+            
+            // Render data rows
+            state.previewData.forEach(item => {
+                const row = document.createElement('tr');
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    td.className = 'px-3 py-2 text-sm text-gray-500';
+                    td.textContent = item[header] || '';
+                    row.appendChild(td);
+                });
+                previewData.appendChild(row);
+            });
+        }
+
+        function handleTemplateUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                state.templateFile = file;
+                templateFileName.textContent = file.name;
+                
+                // Here you would read the template file to extract sheet names, etc.
+                // For now, we'll just store the file
+            } else {
+                state.templateFile = null;
+                templateFileName.textContent = 'No file chosen';
+            }
+        }
+
+        function exportToExcel() {
+            // Show loading state
+            exportBtn.disabled = true;
+            exportBtn.innerHTML = '<div class="loading-spinner"></div>';
+            
+            // Simulate export process
+            setTimeout(() => {
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                
+                if (state.exportStructure === 'single-sheet') {
+                    // Prepare data for single sheet
+                    const exportData = state.fetchedData.map(item => {
+                        const exportItem = {};
+                        
+                        for (const fieldName in state.mappedFields) {
+                            const mapping = state.mappedFields[fieldName];
+                            exportItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
+                        }
+                        
+                        return exportItem;
+                    });
+                    
+                    // Create worksheet
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    XLSX.utils.book_append_sheet(wb, ws, state.dataType);
+                    
+                    // Add comments sheet if needed
+                    if (state.includeComments) {
+                        const commentsWs = XLSX.utils.json_to_sheet([]);
+                        XLSX.utils.book_append_sheet(wb, commentsWs, 'Comments');
+                    }
+                } else {
+                    // Multiple sheets (one per item)
+                    state.fetchedData.forEach((item, index) => {
+                        const exportItem = {};
+                        
+                        for (const fieldName in state.mappedFields) {
+                            const mapping = state.mappedFields[fieldName];
+                            exportItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
+                        }
+                        
+                        const ws = XLSX.utils.json_to_sheet([exportItem]);
+                        XLSX.utils.book_append_sheet(wb, ws, `${state.dataType}_${index + 1}`);
+                    });
+                }
+                
+                // Generate file name
+                const fileName = document.getElementById('export-filename').value.trim() || 'gitlab_export.xlsx';
+                
+                // Export workbook
+                XLSX.writeFile(wb, fileName);
+                
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<span>Export Complete</span><i class="fas fa-check ml-2"></i>';
+                
+                // Reset button after delay
+                setTimeout(() => {
+                    exportBtn.innerHTML = '<span>Export to Excel</span><i class="fas fa-file-excel ml-2"></i>';
+                }, 1500);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
