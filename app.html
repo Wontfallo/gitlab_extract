@@ -17,153 +17,277 @@
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
         .field-item {
             transition: all 0.2s ease;
         }
-        
+
         .field-item:hover {
             background-color: #f3f4f6;
             transform: translateY(-2px);
         }
-        
+
         .tab-content {
             display: none;
         }
-        
+
         .tab-content.active {
             display: block;
             animation: fadeIn 0.3s ease;
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
+
         .preview-table {
             max-height: 400px;
             overflow-y: auto;
         }
+
+        /* Dark Mode Styles */
+        body.dark {
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+
+        body.dark .bg-white {
+            background-color: #2d3748; /* Darker card background */
+            color: #e2e8f0;
+        }
+
+        body.dark .text-gray-700 {
+            color: #e2e8f0; /* Light text for labels etc. */
+        }
+
+        body.dark .text-gray-500 {
+            color: #a0aec0; /* Lighter gray text */
+        }
+
+        body.dark .border {
+            border-color: #4a5568; /* Darker borders */
+        }
+
+        body.dark .bg-gray-50 {
+            background-color: #2d3748; /* Darker background for info boxes etc. */
+        }
+
+        body.dark input[type="text"],
+        body.dark input[type="password"],
+        body.dark input[type="url"],
+        body.dark textarea {
+            background-color: #4a5568; /* Darker input background */
+            color: #e2e8f0;
+            border-color: #636b6f;
+        }
+
+        body.dark input[type="text"]::placeholder,
+        body.dark input[type="password"]::placeholder,
+        body.dark input[type="url"]::placeholder,
+        body.dark textarea::placeholder {
+            color: #a0aec0; /* Lighter placeholder text */
+        }
+
+        body.dark .hover\:bg-gray-50:hover {
+            background-color: #4a5568; /* Darker hover effect */
+        }
+
+        body.dark .bg-blue-600 {
+            background-color: #4299e1; /* Lighter blue for header/buttons */
+        }
+
+        body.dark .hover\:bg-blue-700:hover {
+            background-color: #63b3ed; /* Lighter blue hover */
+        }
+
+        body.dark .bg-green-600 {
+            background-color: #48bb78; /* Lighter green for export button */
+        }
+
+        body.dark .hover\:bg-green-700:hover {
+            background-color: #68d391; /* Lighter green hover */
+        }
+
+        body.dark .bg-gray-200 {
+            background-color: #718096; /* Darker gray for back buttons */
+            color: #e2e8f0;
+        }
+
+        body.dark .hover\:bg-gray-300:hover {
+            background-color: #a0aec0; /* Lighter gray hover */
+        }
+
+        body.dark .text-blue-100 {
+            color: #bfd8f0; /* Lighter blue text */
+        }
+
+        body.dark .text-blue-500 {
+            color: #63b3ed; /* Lighter blue icons */
+        }
+
+        body.dark .text-yellow-500 {
+            color: #f6e05e; /* Lighter yellow icons */
+        }
+
+        body.dark .text-red-500 {
+            color: #fc8181; /* Lighter red icons */
+        }
+
+        body.dark .text-gray-400 {
+            color: #a0aec0; /* Lighter gray placeholder text */
+        }
+
+        body.dark .text-gray-600 {
+            color: #cbd5e0; /* Lighter gray text */
+        }
+
+        body.dark .text-gray-800 {
+            color: #e2e8f0; /* Light text */
+        }
+
+        body.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+            border-color: #4a5568; /* Darker dividers */
+        }
+
+        body.dark .focus\:ring-blue-500:focus {
+            --tw-ring-color: #63b3ed; /* Lighter focus ring */
+        }
+
+        body.dark .focus\:ring-green-500:focus {
+            --tw-ring-color: #68d391; /* Lighter focus ring */
+        }
+
+        body.dark .focus\:ring-gray-500:focus {
+            --tw-ring-color: #a0aec0; /* Lighter focus ring */
+        }
+
+        body.dark .loading-spinner {
+             border-top-color: #63b3ed; /* Lighter spinner color */
+        }
+
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-6 py-10"> <!-- Increased padding -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Header -->
-            <div class="bg-blue-600 text-white px-6 py-4">
-                <h1 class="text-2xl font-bold flex items-center">
-                    <i class="fab fa-gitlab mr-3"></i>
+            <div class="bg-blue-600 text-white px-8 py-6 relative"> <!-- Increased padding, added relative for button positioning -->
+                <h1 class="text-3xl font-bold flex items-center"> <!-- Increased font size -->
+                    <i class="fab fa-gitlab mr-4"></i> <!-- Increased margin -->
                     Asteroid QA GitLab Grabber - Data Exporter
                 </h1>
-                <p class="text-blue-100 mt-1">Export GitLab project data to Excel with custom mapping.</p>
-                <p class="text-blue-100 mt-1">Author: Gerald Jackson</p>
+                <button id="dark-mode-toggle" class="absolute top-6 right-8 text-white p-2 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i> <!-- Moon icon for dark mode -->
+                </button>
+                <p class="text-blue-100 mt-2 text-lg">Export GitLab project data to Excel with custom mapping.</p> <!-- Increased margin and font size -->
+                <p class="text-blue-100 mt-1 text-sm">Author: Gerald Jackson</p> <!-- Adjusted font size -->
             </div>
-            
+
             <!-- Progress Steps -->
-            <div class="px-6 py-4 border-b">
+            <div class="px-8 py-6 border-b border-gray-200"> <!-- Increased padding, added border color -->
                 <div class="flex justify-between items-center">
-                    <div class="step flex flex-col items-center" data-step="1">
-                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">1</div>
-                        <span class="mt-2 text-sm font-medium">Connect</span>
+                    <div class="step flex flex-col items-center w-1/4" data-step="1"> <!-- Added width -->
+                        <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">1</div> <!-- Increased size and font size -->
+                        <span class="mt-2 text-sm font-medium text-center">Connect</span> <!-- Added text-center -->
                     </div>
-                    <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
-                    <div class="step flex flex-col items-center" data-step="2">
-                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">2</div>
-                        <span class="mt-2 text-sm font-medium text-gray-500">Select Data</span>
+                    <div class="flex-1 h-1 bg-gray-300 mx-4"></div> <!-- Increased margin, darker gray -->
+                    <div class="step flex flex-col items-center w-1/4" data-step="2"> <!-- Added width -->
+                        <div class="w-12 h-12 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-lg">2</div> <!-- Increased size and font size, darker gray text -->
+                        <span class="mt-2 text-sm font-medium text-gray-600 text-center">Select Data</span> <!-- Added text-center, darker gray text -->
                     </div>
-                    <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
-                    <div class="step flex flex-col items-center" data-step="3">
-                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">3</div>
-                        <span class="mt-2 text-sm font-medium text-gray-500">Map Fields</span>
+                    <div class="flex-1 h-1 bg-gray-300 mx-4"></div> <!-- Increased margin, darker gray -->
+                    <div class="step flex flex-col items-center w-1/4" data-step="3"> <!-- Added width -->
+                        <div class="w-12 h-12 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-lg">3</div> <!-- Increased size and font size, darker gray text -->
+                        <span class="mt-2 text-sm font-medium text-gray-600 text-center">Map Fields</span> <!-- Added text-center, darker gray text -->
                     </div>
-                    <div class="flex-1 h-1 bg-gray-200 mx-2"></div>
-                    <div class="step flex flex-col items-center" data-step="4">
-                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">4</div>
-                        <span class="mt-2 text-sm font-medium text-gray-500">Export</span>
+                    <div class="flex-1 h-1 bg-gray-300 mx-4"></div> <!-- Increased margin, darker gray -->
+                    <div class="step flex flex-col items-center w-1/4" data-step="4"> <!-- Added width -->
+                        <div class="w-12 h-12 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-lg">4</div> <!-- Increased size and font size, darker gray text -->
+                        <span class="mt-2 text-sm font-medium text-gray-600 text-center">Export</span> <!-- Added text-center, darker gray text -->
                     </div>
                 </div>
             </div>
-            
+
             <!-- Main Content -->
-            <div class="p-6">
+            <div class="p-8"> <!-- Increased padding -->
                 <!-- Tab 1: Connect to GitLab -->
                 <div id="tab-1" class="tab-content active">
-                    <h2 class="text-xl font-semibold mb-4">Connect to GitLab</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <h2 class="text-2xl font-semibold mb-6">Connect to GitLab</h2> <!-- Increased font size and margin -->
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8"> <!-- Increased gap -->
                         <div>
-                            <div class="mb-4">
-                                <label for="api-key" class="block text-sm font-medium text-gray-700 mb-1">GitLab API Key</label>
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label for="api-key" class="block text-sm font-medium text-gray-700 mb-2">GitLab API Key</label> <!-- Increased margin -->
                                 <div class="relative">
-                                    <input type="password" id="api-key" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your GitLab API key">
-                                    <button id="toggle-api-key" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
+                                    <input type="password" id="api-key" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="Enter your GitLab API key"> <!-- Added border color, outline none, transition -->
+                                    <button id="toggle-api-key" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 focus:outline-none" aria-label="Show API Key"> <!-- Added outline none -->
                                         <i class="far fa-eye"></i>
                                     </button>
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500">You can generate an API key in your GitLab profile settings</p>
+                                <p class="mt-2 text-xs text-gray-500">You can generate an API key in your GitLab profile settings</p> <!-- Increased margin -->
                             </div>
-                            
-                            <div class="mb-4">
-                                <label for="gitlab-url" class="block text-sm font-medium text-gray-700 mb-1">GitLab Instance URL</label>
-                                <input type="url" id="gitlab-url" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="https://gitlab.com" value="https://gitlab.com">
-                                <p class="mt-1 text-xs text-gray-500">For self-hosted GitLab, enter your instance URL</p>
+
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label for="gitlab-url" class="block text-sm font-medium text-gray-700 mb-2">GitLab Instance URL</label> <!-- Increased margin -->
+                                <input type="url" id="gitlab-url" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="https://gitlab.com" value="https://gitlab.com"> <!-- Added border color, outline none, transition -->
+                                <p class="mt-2 text-xs text-gray-500">For self-hosted GitLab, enter your instance URL</p> <!-- Increased margin -->
                             </div>
-                            
-                            <div class="mb-4">
-                                <label for="project-id" class="block text-sm font-medium text-gray-700 mb-1">Project ID or Path</label>
-                                <input type="text" id="project-id" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="group/project or numeric ID">
-                                <p class="mt-1 text-xs text-gray-500">You can find this in the project's URL</p>
+
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label for="project-id" class="block text-sm font-medium text-gray-700 mb-2">Project ID or Path</label> <!-- Increased margin -->
+                                <input type="text" id="project-id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="group/project or numeric ID"> <!-- Added border color, outline none, transition -->
+                                <p class="mt-2 text-xs text-gray-500">You can find this in the project's URL</p> <!-- Increased margin -->
                             </div>
                         </div>
-                        
-                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <h3 class="font-medium text-gray-800 mb-2">Connection Help</h3>
-                            <ul class="text-sm text-gray-600 space-y-2">
+
+                        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200"> <!-- Increased padding -->
+                            <h3 class="font-semibold text-gray-800 mb-4">Connection Help</h3> <!-- Increased font weight and margin -->
+                            <ul class="text-sm text-gray-600 space-y-3"> <!-- Increased space between list items -->
                                 <li class="flex items-start">
-                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>For GitLab.com, use the default URL (https://gitlab.com)</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>For self-hosted instances, enter your GitLab URL (e.g., https://gitlab.example.com)</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>API keys require at least "read_api" and "read_repository" permissions</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>Project path should be URL-encoded (e.g., "my%2Fproject" for "my/project")</span>
                                 </li>
                             </ul>
                         </div>
                     </div>
-                    
-                    <div class="mt-6 flex justify-end">
-                        <button id="connect-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center">
+
+                    <div class="mt-8 flex justify-end"> <!-- Increased margin -->
+                        <button id="connect-btn" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center font-semibold transition duration-200"> <!-- Increased padding, font weight, transition -->
                             <span>Connect</span>
-                            <i class="fas fa-plug ml-2"></i>
+                            <i class="fas fa-plug ml-3"></i> <!-- Increased margin -->
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Tab 2: Select Data -->
                 <div id="tab-2" class="tab-content">
-                    <h2 class="text-xl font-semibold mb-4">Select Data to Export</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <h2 class="text-2xl font-semibold mb-6">Select Data to Export</h2> <!-- Increased font size and margin -->
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8"> <!-- Increased gap -->
                         <div class="md:col-span-2">
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Data Type</label>
-                                <div class="flex space-x-4">
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Data Type</label> <!-- Increased margin -->
+                                <div class="flex space-x-6"> <!-- Increased space -->
                                     <label class="inline-flex items-center">
-                                        <input type="radio" name="data-type" value="issues" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <input type="radio" name="data-type" value="issues" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                                         <span class="ml-2 text-gray-700">Issues</span>
                                     </label>
                                     <label class="inline-flex items-center">
@@ -176,16 +300,16 @@
                                     </label>
                                 </div>
                             </div>
-                            
-                            <div class="mb-4">
-                                <label for="data-filters" class="block text-sm font-medium text-gray-700 mb-1">Filters (Optional)</label>
-                                <textarea id="data-filters" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 h-24" placeholder="Enter filter parameters as JSON (e.g., {'state': 'opened', 'labels': 'bug'})"></textarea>
-                                <p class="mt-1 text-xs text-gray-500">Leave empty to fetch all items. Refer to GitLab API docs for available filters.</p>
+
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label for="data-filters" class="block text-sm font-medium text-gray-700 mb-2">Filters (Optional)</label> <!-- Increased margin -->
+                                <textarea id="data-filters" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24 transition duration-200" placeholder="Enter filter parameters as JSON (e.g., {'state': 'opened', 'labels': 'bug'})"></textarea> <!-- Added border color, outline none, transition -->
+                                <p class="mt-2 text-xs text-gray-500">Leave empty to fetch all items. Refer to GitLab API docs for available filters.</p> <!-- Increased margin -->
                             </div>
-                            
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
-                                <div class="space-y-2">
+
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label> <!-- Increased margin -->
+                                <div class="space-y-3"> <!-- Increased space -->
                                     <label class="inline-flex items-center">
                                         <input type="checkbox" id="include-comments" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                                         <span class="ml-2 text-gray-700">Include comments/discussions</span>
@@ -201,52 +325,52 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <h3 class="font-medium text-gray-800 mb-2">Data Selection Tips</h3>
-                            <ul class="text-sm text-gray-600 space-y-2">
+
+                        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200"> <!-- Increased padding -->
+                            <h3 class="font-semibold text-gray-800 mb-4">Data Selection Tips</h3> <!-- Increased font weight and margin -->
+                            <ul class="text-sm text-gray-600 space-y-3"> <!-- Increased space -->
                                 <li class="flex items-start">
-                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>Select "Issues" to export your project's issue tracker data</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>Use filters to narrow down the data (e.g., only open issues)</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>For large projects, consider adding filters to limit results</span>
                                 </li>
                                 <li class="flex items-start">
-                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i> <!-- Increased margin -->
                                     <span>Comments will be exported as a separate sheet</span>
                                 </li>
                             </ul>
                         </div>
                     </div>
-                    
-                    <div class="mt-6 flex justify-between">
-                        <button id="back-to-connect" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+
+                    <div class="mt-8 flex justify-between"> <!-- Increased margin -->
+                        <button id="back-to-connect" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-semibold transition duration-200"> <!-- Increased padding, font weight, transition -->
                             Back
                         </button>
-                        <button id="fetch-data-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center">
+                        <button id="fetch-data-btn" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center font-semibold transition duration-200"> <!-- Increased padding, font weight, transition -->
                             <span>Fetch Data</span>
-                            <i class="fas fa-database ml-2"></i>
+                            <i class="fas fa-database ml-3"></i> <!-- Increased margin -->
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Tab 3: Map Fields -->
                 <div id="tab-3" class="tab-content">
-                    <h2 class="text-xl font-semibold mb-4">Map Fields to Excel</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <h2 class="text-2xl font-semibold mb-6">Map Fields to Excel</h2> <!-- Increased font size and margin -->
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8"> <!-- Increased gap -->
                         <div class="md:col-span-2">
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Structure</label>
-                                <div class="flex space-x-4">
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Structure</label> <!-- Increased margin -->
+                                <div class="flex space-x-6"> <!-- Increased space -->
                                     <label class="inline-flex items-center">
-                                        <input type="radio" name="export-structure" value="single-sheet" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <input type="radio" name="export-structure" value="single-sheet" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                                         <span class="ml-2 text-gray-700">Single Sheet (All items)</span>
                                     </label>
                                     <label class="inline-flex items-center">
@@ -255,50 +379,50 @@
                                     </label>
                                 </div>
                             </div>
-                            
-                            <div id="template-upload-section" class="mb-4 hidden">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Excel Template (Optional)</label>
+
+                            <div id="template-upload-section" class="mb-6 hidden"> <!-- Increased margin -->
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Excel Template (Optional)</label> <!-- Increased margin -->
                                 <div class="mt-1 flex items-center">
                                     <input type="file" id="excel-template" accept=".xlsx,.xls" class="hidden">
-                                    <label for="excel-template" class="cursor-pointer px-4 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <label for="excel-template" class="cursor-pointer px-4 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"> <!-- Added border color, outline none, transition -->
                                         Choose File
                                     </label>
-                                    <span id="template-file-name" class="ml-2 text-sm text-gray-500">No file chosen</span>
+                                    <span id="template-file-name" class="ml-3 text-sm text-gray-500">No file chosen</span> <!-- Increased margin -->
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500">Upload an Excel template to use as the base for your export</p>
+                                <p class="mt-2 text-xs text-gray-500">Upload an Excel template to use as the base for your export</p> <!-- Increased margin -->
                             </div>
-                            
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Available Fields</label>
-                                <div class="border rounded-lg p-2 h-64 overflow-y-auto" id="available-fields">
+
+                            <div class="mb-6"> <!-- Increased margin -->
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Available Fields</label> <!-- Increased margin -->
+                                <div class="border border-gray-300 rounded-lg p-3 h-64 overflow-y-auto" id="available-fields"> <!-- Added border color, increased padding -->
                                     <div class="text-center py-10 text-gray-400">
-                                        <i class="fas fa-database fa-2x mb-2"></i>
+                                        <i class="fas fa-database fa-2x mb-3"></i> <!-- Increased margin -->
                                         <p>Connect and fetch data to see available fields</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div>
-                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full">
-                                <h3 class="font-medium text-gray-800 mb-2">Field Mapping</h3>
-                                <div id="mapping-container" class="space-y-3">
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 h-full"> <!-- Increased padding -->
+                                <h3 class="font-semibold text-gray-800 mb-4">Field Mapping</h3> <!-- Increased font weight and margin -->
+                                <div id="mapping-container" class="space-y-4"> <!-- Increased space -->
                                     <div class="text-sm text-gray-500 italic">No fields selected yet</div>
                                 </div>
-                                
-                                <div class="mt-4 pt-4 border-t">
-                                    <h4 class="text-sm font-medium text-gray-700 mb-2">Preview</h4>
-                                    <div class="preview-table border rounded-lg overflow-hidden">
+
+                                <div class="mt-6 pt-6 border-t border-gray-200"> <!-- Increased margin and padding, added border color -->
+                                    <h4 class="text-base font-medium text-gray-700 mb-3">Preview</h4> <!-- Increased font size and margin -->
+                                    <div class="preview-table border border-gray-300 rounded-lg overflow-hidden"> <!-- Added border color -->
                                         <table class="min-w-full divide-y divide-gray-200">
-                                            <thead class="bg-gray-50">
+                                            <thead class="bg-gray-100"> <!-- Lighter background -->
                                                 <tr>
-                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Excel Cell</th>
-                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GitLab Field</th>
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Excel Cell</th> <!-- Increased padding, darker text -->
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">GitLab Field</th> <!-- Increased padding, darker text -->
                                                 </tr>
                                             </thead>
                                             <tbody id="mapping-preview" class="bg-white divide-y divide-gray-200">
                                                 <tr>
-                                                    <td colspan="2" class="px-3 py-2 text-sm text-gray-500 text-center">No mappings yet</td>
+                                                    <td colspan="2" class="px-4 py-3 text-sm text-gray-500 text-center">No mappings yet</td> <!-- Increased padding -->
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -307,54 +431,54 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="mt-6 flex justify-between">
-                        <button id="back-to-select" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+
+                    <div class="mt-8 flex justify-between"> <!-- Increased margin -->
+                        <button id="back-to-select" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-semibold transition duration-200"> <!-- Increased padding, font weight, transition -->
                             Back
                         </button>
-                        <button id="preview-data-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center">
+                        <button id="preview-data-btn" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center font-semibold transition duration-200"> <!-- Increased padding, font weight, transition -->
                             <span>Preview Data</span>
-                            <i class="fas fa-eye ml-2"></i>
+                            <i class="fas fa-eye ml-3"></i> <!-- Increased margin -->
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Tab 4: Export -->
                 <div id="tab-4" class="tab-content">
-                    <h2 class="text-xl font-semibold mb-4">Export Data</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <h2 class="text-2xl font-semibold mb-6">Export Data</h2> <!-- Increased font size and margin -->
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8"> <!-- Increased gap -->
                         <div class="md:col-span-2">
-                            <div class="bg-white border rounded-lg overflow-hidden">
-                                <div class="p-4 border-b">
-                                    <h3 class="font-medium text-gray-800">Export Summary</h3>
+                            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden"> <!-- Added border color -->
+                                <div class="p-4 border-b border-gray-200"> <!-- Added border color -->
+                                    <h3 class="font-semibold text-gray-800">Export Summary</h3> <!-- Increased font weight -->
                                 </div>
                                 <div class="divide-y divide-gray-200">
-                                    <div class="px-4 py-3">
+                                    <div class="px-6 py-4"> <!-- Increased padding -->
                                         <div class="flex justify-between">
                                             <span class="text-sm font-medium text-gray-600">Project:</span>
                                             <span id="export-project" class="text-sm text-gray-800">-</span>
                                         </div>
                                     </div>
-                                    <div class="px-4 py-3">
+                                    <div class="px-6 py-4"> <!-- Increased padding -->
                                         <div class="flex justify-between">
                                             <span class="text-sm font-medium text-gray-600">Data Type:</span>
                                             <span id="export-data-type" class="text-sm text-gray-800">-</span>
                                         </div>
                                     </div>
-                                    <div class="px-4 py-3">
+                                    <div class="px-6 py-4"> <!-- Increased padding -->
                                         <div class="flex justify-between">
                                             <span class="text-sm font-medium text-gray-600">Items to Export:</span>
                                             <span id="export-item-count" class="text-sm text-gray-800">-</span>
                                         </div>
                                     </div>
-                                    <div class="px-4 py-3">
+                                    <div class="px-6 py-4"> <!-- Increased padding -->
                                         <div class="flex justify-between">
                                             <span class="text-sm font-medium text-gray-600">Fields Mapped:</span>
                                             <span id="export-field-count" class="text-sm text-gray-800">-</span>
                                         </div>
                                     </div>
-                                    <div class="px-4 py-3">
+                                    <div class="px-6 py-4"> <!-- Increased padding -->
                                         <div class="flex justify-between">
                                             <span class="text-sm font-medium text-gray-600">Export Structure:</span>
                                             <span id="export-structure" class="text-sm text-gray-800">-</span>
@@ -362,17 +486,17 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="mt-4">
-                                <label for="export-filename" class="block text-sm font-medium text-gray-700 mb-1">File Name</label>
-                                <input type="text" id="export-filename" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="gitlab_export.xlsx" value="gitlab_export.xlsx">
+
+                            <div class="mt-6"> <!-- Increased margin -->
+                                <label for="export-filename" class="block text-sm font-medium text-gray-700 mb-2">File Name</label> <!-- Increased margin -->
+                                <input type="text" id="export-filename" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="gitlab_export.xlsx" value="gitlab_export.xlsx"> <!-- Added border color, outline none, transition -->
                             </div>
-                            
-                            <div class="mt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label>
-                                <div class="space-y-2">
+
+                            <div class="mt-6"> <!-- Increased margin -->
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Export Options</label> <!-- Increased margin -->
+                                <div class="space-y-3"> <!-- Increased space -->
                                     <label class="inline-flex items-center">
-                                        <input type="checkbox" id="format-dates" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <input type="checkbox" id="format-dates" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                                         <span class="ml-2 text-gray-700">Format dates in Excel</span>
                                     </label>
                                     <label class="inline-flex items-center">
@@ -386,20 +510,20 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div>
-                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full">
-                                <h3 class="font-medium text-gray-800 mb-2">Data Preview</h3>
-                                <div class="preview-table border rounded-lg overflow-hidden bg-white">
+                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 h-full"> <!-- Increased padding -->
+                                <h3 class="font-semibold text-gray-800 mb-4">Data Preview</h3> <!-- Increased font weight and margin -->
+                                <div class="preview-table border border-gray-300 rounded-lg overflow-hidden bg-white"> <!-- Added border color -->
                                     <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
+                                        <thead class="bg-gray-100"> <!-- Lighter background -->
                                             <tr id="preview-headers">
-                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loading...</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Loading...</th> <!-- Increased padding, darker text -->
                                             </tr>
                                         </thead>
                                         <tbody id="preview-data" class="bg-white divide-y divide-gray-200">
                                             <tr>
-                                                <td class="px-3 py-2 text-sm text-gray-500">Select fields and preview to see data</td>
+                                                <td class="px-4 py-3 text-sm text-gray-500 text-center">Select fields and preview to see data</td> <!-- Increased padding -->
                                             </tr>
                                         </tbody>
                                     </table>
@@ -407,14 +531,14 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="mt-6 flex justify-between">
-                        <button id="back-to-map" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+
+                    <div class="mt-8 flex justify-between"> <!-- Increased margin -->
+                        <button id="back-to-map" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-semibold transition duration-200"> <!-- Increased padding, font weight, transition -->
                             Back
                         </button>
-                        <button id="export-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center">
+                        <button id="export-btn" class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center font-semibold transition duration-200"> <!-- Increased padding, font weight, transition -->
                             <span>Export to Excel</span>
-                            <i class="fas fa-file-excel ml-2"></i>
+                            <i class="fas fa-file-excel ml-3"></i> <!-- Increased margin -->
                         </button>
                     </div>
                 </div>
@@ -476,6 +600,7 @@
         const excelTemplateInput = document.getElementById('excel-template');
         const templateFileName = document.getElementById('template-file-name');
         const templateUploadSection = document.getElementById('template-upload-section');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
 
         // Event listeners
         toggleApiKeyBtn.addEventListener('click', toggleApiKeyVisibility);
@@ -486,13 +611,13 @@
         previewDataBtn.addEventListener('click', previewDataHandler);
         backToMapBtn.addEventListener('click', () => navigateToStep(3));
         exportBtn.addEventListener('click', exportToExcel);
-        
+
         document.querySelectorAll('input[name="data-type"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 state.dataType = e.target.value;
             });
         });
-        
+
         document.querySelectorAll('input[name="export-structure"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 state.exportStructure = e.target.value;
@@ -503,17 +628,20 @@
                 }
             });
         });
-        
+
         excelTemplateInput.addEventListener('change', handleTemplateUpload);
+        darkModeToggle.addEventListener('click', toggleDarkMode);
 
         // Functions
         function toggleApiKeyVisibility() {
             if (apiKeyInput.type === 'password') {
                 apiKeyInput.type = 'text';
                 toggleApiKeyBtn.innerHTML = '<i class="far fa-eye-slash"></i>';
+                toggleApiKeyBtn.setAttribute('aria-label', 'Hide API Key');
             } else {
                 apiKeyInput.type = 'password';
                 toggleApiKeyBtn.innerHTML = '<i class="far fa-eye"></i>';
+                toggleApiKeyBtn.setAttribute('aria-label', 'Show API Key');
             }
         }
 
@@ -522,22 +650,22 @@
             if (step === 2 && !validateConnection()) return;
             if (step === 3 && !validateDataSelection()) return;
             if (step === 4 && !validateFieldMapping()) return;
-            
+
             // Update UI
             state.currentStep = step;
-            
+
             // Hide all tabs
             Object.values(tabs).forEach(tab => tab.classList.remove('active'));
-            
+
             // Show current tab
             tabs[step].classList.add('active');
-            
+
             // Update progress steps
             steps.forEach(stepEl => {
                 const stepNumber = parseInt(stepEl.dataset.step);
                 const circle = stepEl.querySelector('div');
                 const text = stepEl.querySelector('span');
-                
+
                 if (stepNumber < step) {
                     circle.classList.remove('bg-gray-200', 'text-gray-600');
                     circle.classList.add('bg-blue-600', 'text-white');
@@ -555,7 +683,7 @@
                     text.classList.add('text-gray-500');
                 }
             });
-            
+
             // Special handling for certain steps
             if (step === 3) {
                 renderAvailableFields();
@@ -569,22 +697,22 @@
             state.apiKey = apiKeyInput.value.trim();
             state.gitlabUrl = gitlabUrlInput.value.trim();
             state.projectId = projectIdInput.value.trim();
-            
+
             if (!state.apiKey) {
                 alert('Please enter your GitLab API key');
                 return false;
             }
-            
+
             if (!state.gitlabUrl) {
                 alert('Please enter your GitLab instance URL');
                 return false;
             }
-            
+
             if (!state.projectId) {
                 alert('Please enter the project ID or path');
                 return false;
             }
-            
+
             return true;
         }
 
@@ -596,11 +724,11 @@
                 alert('Invalid JSON format for filters');
                 return false;
             }
-            
+
             state.includeComments = document.getElementById('include-comments').checked;
             state.includeLabels = document.getElementById('include-labels').checked;
             state.includeAssignees = document.getElementById('include-assignees').checked;
-            
+
             return true;
         }
 
@@ -609,25 +737,25 @@
                 alert('Please select at least one field to export');
                 return false;
             }
-            
+
             return true;
         }
 
         function connectToGitLab() {
             if (!validateConnection()) return;
-            
+
             // Show loading state
             connectBtn.disabled = true;
             connectBtn.innerHTML = '<div class="loading-spinner"></div>';
-            
+
             // Simulate API connection (in a real app, this would be an actual API call)
             setTimeout(() => {
                 connectBtn.disabled = false;
                 connectBtn.innerHTML = '<span>Connected</span><i class="fas fa-check ml-2"></i>';
-                
+
                 // Proceed to next step
                 navigateToStep(2);
-                
+
                 // Reset button after delay
                 setTimeout(() => {
                     connectBtn.innerHTML = '<span>Connect</span><i class="fas fa-plug ml-2"></i>';
@@ -637,11 +765,11 @@
 
         function fetchData() {
             if (!validateDataSelection()) return;
-            
+
             // Show loading state
             fetchDataBtn.disabled = true;
             fetchDataBtn.innerHTML = '<div class="loading-spinner"></div>';
-            
+
             // Simulate API call to fetch data
             setTimeout(() => {
                 // Sample data structure for issues (would come from API in real app)
@@ -680,18 +808,18 @@
                         web_url: "https://gitlab.com/sample/project/-/issues/2"
                     }
                 ];
-                
+
                 // Generate available fields from the first item
                 if (state.fetchedData.length > 0) {
                     generateAvailableFields(state.fetchedData[0]);
                 }
-                
+
                 fetchDataBtn.disabled = false;
                 fetchDataBtn.innerHTML = '<span>Data Fetched</span><i class="fas fa-check ml-2"></i>';
-                
+
                 // Proceed to next step
                 navigateToStep(3);
-                
+
                 // Reset button after delay
                 setTimeout(() => {
                     fetchDataBtn.innerHTML = '<span>Fetch Data</span><i class="fas fa-database ml-2"></i>';
@@ -701,7 +829,7 @@
 
         function generateAvailableFields(sampleItem) {
             state.availableFields = [];
-            
+
             // Basic fields
             for (const key in sampleItem) {
                 if (typeof sampleItem[key] !== 'object' && !Array.isArray(sampleItem[key])) {
@@ -713,7 +841,7 @@
                     });
                 }
             }
-            
+
             // Nested fields (author)
             if (sampleItem.author) {
                 for (const key in sampleItem.author) {
@@ -725,7 +853,7 @@
                     });
                 }
             }
-            
+
             // Special fields (labels as string)
             if (sampleItem.labels) {
                 state.availableFields.push({
@@ -735,7 +863,7 @@
                     path: 'labels'
                 });
             }
-            
+
             // Special fields (assignees as string)
             if (sampleItem.assignees) {
                 state.availableFields.push({
@@ -745,7 +873,7 @@
                     path: 'assignees'
                 });
             }
-            
+
             // Add any custom fields you want to expose
             state.availableFields.push({
                 name: 'web_url',
@@ -757,7 +885,7 @@
 
         function renderAvailableFields() {
             availableFieldsContainer.innerHTML = '';
-            
+
             if (state.availableFields.length === 0) {
                 availableFieldsContainer.innerHTML = `
                     <div class="text-center py-10 text-gray-400">
@@ -767,9 +895,9 @@
                 `;
                 return;
             }
-            
+
             const fieldGroups = groupFields(state.availableFields);
-            
+
             for (const group in fieldGroups) {
                 const groupEl = document.createElement('div');
                 groupEl.className = 'mb-4';
@@ -786,7 +914,7 @@
                     </div>
                 `;
                 availableFieldsContainer.appendChild(groupEl);
-                
+
                 // Add event listeners to checkboxes
                 fieldGroups[group].forEach(field => {
                     const checkbox = groupEl.querySelector(`#field-${field.name}`);
@@ -797,7 +925,7 @@
                             removeFieldFromMapping(field.name);
                         }
                     });
-                    
+
                     // Check if field is already selected
                     if (state.selectedFields.some(f => f.name === field.name)) {
                         checkbox.checked = true;
@@ -812,7 +940,7 @@
                 'Author Fields': [],
                 'Special Fields': []
             };
-            
+
             fields.forEach(field => {
                 if (field.name.startsWith('author.')) {
                     groups['Author Fields'].push(field);
@@ -822,14 +950,14 @@
                     groups['Basic Fields'].push(field);
                 }
             });
-            
+
             // Remove empty groups
             for (const group in groups) {
                 if (groups[group].length === 0) {
                     delete groups[group];
                 }
             }
-            
+
             return groups;
         }
 
@@ -854,13 +982,13 @@
 
         function renderFieldMapping() {
             mappingContainer.innerHTML = '';
-            
+
             if (state.selectedFields.length === 0) {
                 mappingContainer.innerHTML = '<div class="text-sm text-gray-500 italic">No fields selected yet</div>';
                 mappingPreview.innerHTML = '<tr><td colspan="2" class="px-3 py-2 text-sm text-gray-500 text-center">No mappings yet</td></tr>';
                 return;
             }
-            
+
             // Render mapping controls
             state.selectedFields.forEach(field => {
                 const fieldEl = document.createElement('div');
@@ -879,14 +1007,14 @@
                     </button>
                 `;
                 mappingContainer.appendChild(fieldEl);
-                
+
                 // Add event listeners
                 const input = fieldEl.querySelector(`#excel-cell-${field.name}`);
                 input.addEventListener('change', (e) => {
                     state.mappedFields[field.name].excelCell = e.target.value.toUpperCase();
                     renderMappingPreview();
                 });
-                
+
                 const removeBtn = fieldEl.querySelector('button');
                 removeBtn.addEventListener('click', () => {
                     removeFieldFromMapping(field.name);
@@ -895,13 +1023,13 @@
                     if (checkbox) checkbox.checked = false;
                 });
             });
-            
+
             renderMappingPreview();
         }
 
         function renderMappingPreview() {
             mappingPreview.innerHTML = '';
-            
+
             for (const fieldName in state.mappedFields) {
                 const field = state.mappedFields[fieldName];
                 const row = document.createElement('tr');
@@ -916,22 +1044,22 @@
 
         function previewDataHandler() {
             if (!validateFieldMapping()) return;
-            
+
             // Show loading state
             previewDataBtn.disabled = true;
             previewDataBtn.innerHTML = '<div class="loading-spinner"></div>';
-            
+
             // Simulate data processing
             setTimeout(() => {
                 // Generate preview data
                 generatePreviewData();
-                
+
                 previewDataBtn.disabled = false;
                 previewDataBtn.innerHTML = '<span>Preview Generated</span><i class="fas fa-check ml-2"></i>';
-                
+
                 // Proceed to next step
                 navigateToStep(4);
-                
+
                 // Reset button after delay
                 setTimeout(() => {
                     previewDataBtn.innerHTML = '<span>Preview Data</span><i class="fas fa-eye ml-2"></i>';
@@ -941,18 +1069,18 @@
 
         function generatePreviewData() {
             state.previewData = [];
-            
+
             // For preview, just use the first 5 items
             const itemsToPreview = state.fetchedData.slice(0, 5);
-            
+
             itemsToPreview.forEach(item => {
                 const previewItem = {};
-                
+
                 for (const fieldName in state.mappedFields) {
                     const mapping = state.mappedFields[fieldName];
                     previewItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
                 }
-                
+
                 state.previewData.push(previewItem);
             });
         }
@@ -962,15 +1090,15 @@
             if (path === 'labels') {
                 return item.labels ? item.labels.join(', ') : '';
             }
-            
+
             if (path === 'assignees') {
                 return item.assignees ? item.assignees.map(a => a.name).join(', ') : '';
             }
-            
+
             // Handle nested fields
             const parts = path.split('.');
             let value = item;
-            
+
             for (const part of parts) {
                 if (value && value.hasOwnProperty(part)) {
                     value = value[part];
@@ -979,7 +1107,7 @@
                     break;
                 }
             }
-            
+
             return value !== null ? value : '';
         }
 
@@ -994,15 +1122,15 @@
         function renderPreviewData() {
             previewHeaders.innerHTML = '';
             previewData.innerHTML = '';
-            
+
             if (state.previewData.length === 0) {
                 previewData.innerHTML = '<tr><td class="px-3 py-2 text-sm text-gray-500">No preview data available</td></tr>';
                 return;
             }
-            
+
             // Create headers from first item's keys
             const headers = Object.keys(state.previewData[0]);
-            
+
             // Render headers
             const headerRow = document.createElement('tr');
             headers.forEach(header => {
@@ -1012,7 +1140,7 @@
                 headerRow.appendChild(th);
             });
             previewHeaders.appendChild(headerRow);
-            
+
             // Render data rows
             state.previewData.forEach(item => {
                 const row = document.createElement('tr');
@@ -1031,7 +1159,7 @@
             if (file) {
                 state.templateFile = file;
                 templateFileName.textContent = file.name;
-                
+
                 // Here you would read the template file to extract sheet names, etc.
                 // For now, we'll just store the file
             } else {
@@ -1044,29 +1172,29 @@
             // Show loading state
             exportBtn.disabled = true;
             exportBtn.innerHTML = '<div class="loading-spinner"></div>';
-            
+
             // Simulate export process
             setTimeout(() => {
                 // Create workbook
                 const wb = XLSX.utils.book_new();
-                
+
                 if (state.exportStructure === 'single-sheet') {
                     // Prepare data for single sheet
                     const exportData = state.fetchedData.map(item => {
                         const exportItem = {};
-                        
+
                         for (const fieldName in state.mappedFields) {
                             const mapping = state.mappedFields[fieldName];
                             exportItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
                         }
-                        
+
                         return exportItem;
                     });
-                    
+
                     // Create worksheet
                     const ws = XLSX.utils.json_to_sheet(exportData);
                     XLSX.utils.book_append_sheet(wb, ws, state.dataType);
-                    
+
                     // Add comments sheet if needed
                     if (state.includeComments) {
                         const commentsWs = XLSX.utils.json_to_sheet([]);
@@ -1076,32 +1204,61 @@
                     // Multiple sheets (one per item)
                     state.fetchedData.forEach((item, index) => {
                         const exportItem = {};
-                        
+
                         for (const fieldName in state.mappedFields) {
                             const mapping = state.mappedFields[fieldName];
                             exportItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
                         }
-                        
+
                         const ws = XLSX.utils.json_to_sheet([exportItem]);
                         XLSX.utils.book_append_sheet(wb, ws, `${state.dataType}_${index + 1}`);
                     });
                 }
-                
+
                 // Generate file name
                 const fileName = document.getElementById('export-filename').value.trim() || 'gitlab_export.xlsx';
-                
+
                 // Export workbook
                 XLSX.writeFile(wb, fileName);
-                
+
                 exportBtn.disabled = false;
                 exportBtn.innerHTML = '<span>Export Complete</span><i class="fas fa-check ml-2"></i>';
-                
+
                 // Reset button after delay
                 setTimeout(() => {
                     exportBtn.innerHTML = '<span>Export to Excel</span><i class="fas fa-file-excel ml-2"></i>';
                 }, 1500);
             }, 2000);
         }
+
+        // Dark Mode
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('dark');
+            const isDarkMode = body.classList.contains('dark');
+            localStorage.setItem('darkMode', isDarkMode);
+            // Update icon
+            darkModeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            darkModeToggle.setAttribute('aria-label', isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode');
+        }
+
+        // Apply saved dark mode preference on load
+        function applyInitialDarkMode() {
+            const body = document.body;
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                body.classList.add('dark');
+                darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                darkModeToggle.setAttribute('aria-label', 'Switch to Light Mode');
+            } else {
+                darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                darkModeToggle.setAttribute('aria-label', 'Switch to Dark Mode');
+            }
+        }
+
+        // Initialize
+        applyInitialDarkMode();
+
     </script>
 </body>
 </html>
