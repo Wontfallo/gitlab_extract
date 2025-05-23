@@ -6,6 +6,7 @@
     <title>Asteroid QA GitLab Grabber - Data Exporter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .loading-spinner {
@@ -327,7 +328,7 @@
                         </div>
 
                         <div class="bg-gray-50 p-6 rounded-lg border border-gray-200"> <!-- Increased padding -->
-                            <h3 class="font-semibold text-gray-800 mb-4">Data Selection Tips</h3> <!-- Increased font weight and margin -->
+                            <h3 class="font-semibold text-gray-800 mb-4">Connection Help</h3> <!-- Increased font weight and margin -->
                             <ul class="text-sm text-gray-600 space-y-3"> <!-- Increased space -->
                                 <li class="flex items-start">
                                     <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i> <!-- Increased margin -->
@@ -451,7 +452,7 @@
                         <div class="md:col-span-2">
                             <div class="bg-white border border-gray-200 rounded-lg overflow-hidden"> <!-- Added border color -->
                                 <div class="p-4 border-b border-gray-200"> <!-- Added border color -->
-                                    <h3 class="font-semibold text-gray-800">Export Summary</h3> <!-- Increased font weight -->
+                                    <h3 class="font-semibold text-gray-800 mb-4">Export Summary</h3> <!-- Increased font weight -->
                                 </div>
                                 <div class="divide-y divide-gray-200">
                                     <div class="px-6 py-4"> <!-- Increased padding -->
@@ -850,18 +851,17 @@
                 }
                 
                 // Store fetched data
-                state.fetchedData = [{
-                    issues: allIssues
-                }];
+                state.fetchedData = allIssues; // Store issues directly
+
+                // Process descriptions
+                state.fetchedData.forEach(issue => {
+                    issue.parsedDescriptionData = parseMarkdownDescription(issue.description);
+                });
 
                 // Generate available fields from the first issue
-                if (allIssues.length > 0) {
-                    generateAvailableFields(allIssues[0]);
+                if (state.fetchedData.length > 0) {
+                    generateAvailableFields(state.fetchedData[0]);
                 }
-
-                fetchDataBtn.disabled = false;
-                fetchDataBtn.innerHTML = '<span>Data Fetched</span><i class="fas fa-check ml-2"></i>';
-                navigateToStep(3);
 
                 fetchDataBtn.disabled = false;
                 fetchDataBtn.innerHTML = '<span>Data Fetched</span><i class="fas fa-check ml-2"></i>';
@@ -880,144 +880,199 @@
             }, 1500);
         }
 
+        function parseMarkdownDescription(markdown) {
+            const parsedData = {};
+            if (!markdown) return parsedData;
+
+            // Convert markdown to HTML
+            const html = marked.parse(markdown);
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // --- Parse Tables ---
+            const tables = doc.querySelectorAll('table');
+            tables.forEach((table, tableIndex) => {
+                const tableData = {};
+                const rows = table.querySelectorAll('tr');
+                let currentHeading = `Table ${tableIndex + 1}`; // Default heading
+
+                // Try to find a preceding heading
+                let prevElement = table.previousElementSibling;
+                while(prevElement) {
+                    if (prevElement.tagName.startsWith('H')) {
+                        currentHeading = prevElement.textContent.trim();
+                        break;
+                    }
+                    prevElement = prevElement.previousElementSibling;
+                }
+
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td, th');
+                    if (cells.length >= 2) {
+                        const key = cells[0].textContent.trim();
+                        const value = cells[1].textContent.trim();
+                        if (key) { // Only add if key is not empty
+                             // Sanitize key to be a valid object property name
+                            const sanitizedKey = key.replace(/[^a-zA-Z0-9_]/g, '_').replace(/__+/g, '_').replace(/^_|_$/g, '');
+                            tableData[sanitizedKey] = value;
+                        }
+                    }
+                });
+                 // Sanitize heading to be a valid object property name
+                const sanitizedHeading = currentHeading.replace(/[^a-zA-Z0-9_]/g, '_').replace(/__+/g, '_').replace(/^_|_$/g, '');
+                parsedData[sanitizedHeading] = tableData;
+            });
+
+
+            // --- Parse Checkboxes ---
+            // Find all list items that contain checkboxes
+            const listItems = doc.querySelectorAll('li');
+            let currentCheckboxHeading = 'Checkboxes'; // Default heading
+
+             listItems.forEach(li => {
+                const checkboxInput = li.querySelector('input[type="checkbox"]');
+                // Check if it's a checked checkbox
+                if (checkboxInput && checkboxInput.checked) {
+                     // Try to find a preceding heading for the checkbox list
+                    let prevElement = li.parentElement.previousElementSibling;
+                    while(prevElement) {
+                        if (prevElement.tagName.startsWith('H')) {
+                            currentCheckboxHeading = prevElement.textContent.trim();
+                            break;
+                        }
+                        prevElement = prevElement.previousElementSibling;
+                    }
+
+                    const checkboxText = li.textContent.trim().replace(/^\[x\]\s*/, ''); // Remove [x] prefix
+
+                    // Sanitize heading to be a valid object property name
+                    const sanitizedHeading = currentCheckboxHeading.replace(/[^a-zA-Z0-9_]/g, '_').replace(/__+/g, '_').replace(/^_|_$/g, '');
+
+                    if (!parsedData[sanitizedHeading]) {
+                        parsedData[sanitizedHeading] = [];
+                    }
+                    parsedData[sanitizedHeading].push(checkboxText);
+                }
+            });
+
+
+            return parsedData;
+        }
+
+
         function generateAvailableFields(data) {
             state.availableFields = [];
 
-            if (data.issues && data.issues.length > 0) {
-                const issue = data.issues[0];
+            // Add standard issue fields
+            const standardFields = [
+                'iid', 'title', 'description', 'state', 'created_at',
+                'updated_at', 'closed_at', 'web_url'
+            ];
 
-                // Basic issue fields
-                const basicFields = [
-                    'iid', 'title', 'description', 'state', 'created_at',
-                    'updated_at', 'closed_at', 'web_url'
-                ];
+            standardFields.forEach(field => {
+                if (data.hasOwnProperty(field)) {
+                    state.availableFields.push({
+                        name: field,
+                        label: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        type: typeof data[field],
+                        path: field
+                    });
+                }
+            });
 
-                basicFields.forEach(field => {
-                    if (issue.hasOwnProperty(field)) {
+            // Add parsed description fields (tables and checkboxes)
+            if (data.parsedDescriptionData) {
+                for (const section in data.parsedDescriptionData) {
+                    const sectionData = data.parsedDescriptionData[section];
+
+                    if (Array.isArray(sectionData)) { // Checkbox list
+                        sectionData.forEach((item, index) => {
+                             // Sanitize item text for field name
+                            const sanitizedItem = item.replace(/[^a-zA-Z0-9_]/g, '_').replace(/__+/g, '_').replace(/^_|_$/g, '');
+                            state.availableFields.push({
+                                name: `parsed_${section}_${sanitizedItem}_${index}`,
+                                label: `${section} - ${item}`,
+                                type: 'string',
+                                path: `parsedDescriptionData.${section}[${index}]`
+                            });
+                        });
+                    } else if (typeof sectionData === 'object') { // Table (key-value)
+                        for (const key in sectionData) {
+                            state.availableFields.push({
+                                name: `parsed_${section}_${key}`,
+                                label: `${section} - ${key}`,
+                                type: typeof sectionData[key],
+                                path: `parsedDescriptionData.${section}.${key}`
+                            });
+                        }
+                    }
+                }
+            }
+
+
+            // Author fields
+            if (data.author) {
+                ['name', 'username'].forEach(field => {
+                    if (data.author[field]) {
                         state.availableFields.push({
-                            name: field,
-                            label: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                            type: typeof issue[field],
-                            path: field
+                            name: `author_${field}`,
+                            label: `Author ${field}`,
+                            type: typeof data.author[field],
+                            path: `author.${field}`
                         });
                     }
                 });
-
-                // Author fields
-                if (issue.author) {
-                    ['name', 'username'].forEach(field => {
-                        if (issue.author[field]) {
-                            state.availableFields.push({
-                                name: `author_${field}`,
-                                label: `Author ${field}`,
-                                type: typeof issue.author[field],
-                                path: `author.${field}`
-                            });
-                        }
-                    });
-                }
-
-                // Labels
-                if (Array.isArray(issue.labels)) {
-                    state.availableFields.push({
-                        name: 'labels',
-                        label: 'Labels',
-                        type: 'string',
-                        path: 'labels'
-                    });
-                }
-
-                // Assignees
-                if (Array.isArray(issue.assignees)) {
-                    state.availableFields.push({
-                        name: 'assignees',
-                        label: 'Assignees',
-                        type: 'string',
-                        path: 'assignees'
-                    });
-                }
-
-                // Milestone
-                if (issue.milestone) {
-                    state.availableFields.push({
-                        name: 'milestone_title',
-                        label: 'Milestone',
-                        type: 'string',
-                        path: 'milestone.title'
-                    });
-                }
-
-                // Due date
-                if (issue.due_date) {
-                    state.availableFields.push({
-                        name: 'due_date',
-                        label: 'Due Date',
-                        type: 'string',
-                        path: 'due_date'
-                    });
-                }
-
-                // Time tracking
-                if (issue.time_stats) {
-                    ['time_estimate', 'total_time_spent'].forEach(field => {
-                        state.availableFields.push({
-                            name: field,
-                            label: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                            type: 'number',
-                            path: `time_stats.${field}`
-                        });
-                    });
-                }
-            }
-        }
-
-        function renderAvailableFields() {
-            availableFieldsContainer.innerHTML = '';
-
-            if (state.availableFields.length === 0) {
-                availableFieldsContainer.innerHTML = `
-                    <div class="text-center py-10 text-gray-400">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                        <p>No fields available. Please fetch data first.</p>
-                    </div>
-                `;
-                return;
             }
 
-            const fieldGroups = groupFields(state.availableFields);
+            // Labels
+            if (Array.isArray(data.labels)) {
+                state.availableFields.push({
+                    name: 'labels',
+                    label: 'Labels',
+                    type: 'string',
+                    path: 'labels'
+                });
+            }
 
-            for (const group in fieldGroups) {
-                const groupEl = document.createElement('div');
-                groupEl.className = 'mb-4';
-                groupEl.innerHTML = `
-                    <h4 class="text-sm font-medium text-gray-700 mb-2 px-2">${group}</h4>
-                    <div class="space-y-1">
-                        ${fieldGroups[group].map(field => `
-                            <div class="field-item flex items-center px-3 py-2 rounded cursor-pointer" data-field="${field.name}">
-                                <input type="checkbox" id="field-${field.name}" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
-                                <label for="field-${field.name}" class="ml-2 text-sm text-gray-700 cursor-pointer flex-1">${field.label}</label>
-                                <span class="text-xs text-gray-500">${field.type}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                availableFieldsContainer.appendChild(groupEl);
+            // Assignees
+            if (Array.isArray(data.assignees)) {
+                state.availableFields.push({
+                    name: 'assignees',
+                    label: 'Assignees',
+                    type: 'string',
+                    path: 'assignees'
+                });
+            }
 
-                // Add event listeners to checkboxes
-                fieldGroups[group].forEach(field => {
-                    const checkbox = groupEl.querySelector(`#field-${field.name}`);
-                    checkbox.addEventListener('change', (e) => {
-                        if (e.target.checked) {
-                            addFieldToMapping(field);
-                        } else {
-                            removeFieldFromMapping(field.name);
-                        }
+            // Milestone
+            if (data.milestone) {
+                state.availableFields.push({
+                    name: 'milestone_title',
+                    label: 'Milestone',
+                    type: 'string',
+                    path: 'milestone.title'
+                });
+            }
+
+            // Due date
+            if (data.due_date) {
+                state.availableFields.push({
+                    name: 'due_date',
+                    label: 'Due Date',
+                    type: 'string',
+                    path: 'due_date'
+                });
+            }
+
+            // Time tracking
+            if (data.time_stats) {
+                ['time_estimate', 'total_time_spent'].forEach(field => {
+                    state.availableFields.push({
+                        name: field,
+                        label: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        type: 'number',
+                        path: `time_stats.${field}`
                     });
-
-                    // Check if field is already selected
-                    if (state.selectedFields.some(f => f.name === field.name)) {
-                        checkbox.checked = true;
-                    }
                 });
             }
         }
@@ -1026,13 +1081,21 @@
             const groups = {
                 'Basic Fields': [],
                 'Author Fields': [],
-                'Special Fields': []
+                'Special Fields': [],
+                'Parsed Description (Tables)': [],
+                'Parsed Description (Checkboxes)': []
             };
 
             fields.forEach(field => {
-                if (field.name.startsWith('author.')) {
+                if (field.name.startsWith('parsed_')) {
+                    if (field.path.includes('[')) { // Checkbox path
+                         groups['Parsed Description (Checkboxes)'].push(field);
+                    } else { // Table path
+                         groups['Parsed Description (Tables)'].push(field);
+                    }
+                } else if (field.name.startsWith('author_')) {
                     groups['Author Fields'].push(field);
-                } else if (field.name.includes('_string') || field.name === 'web_url') {
+                } else if (field.name.includes('_string') || field.name === 'web_url' || field.name === 'labels' || field.name === 'assignees' || field.name.startsWith('milestone_') || field.name === 'due_date' || field.name.startsWith('time_stats_')) {
                     groups['Special Fields'].push(field);
                 } else {
                     groups['Basic Fields'].push(field);
@@ -1159,8 +1222,8 @@
             state.previewData = [];
 
             // Show preview of first few issues
-            const issuesToPreview = state.fetchedData[0].issues.slice(0, 3);
-            
+            const issuesToPreview = state.fetchedData.slice(0, 3); // Use state.fetchedData directly
+
             issuesToPreview.forEach(issue => {
                 const preview = {};
                 for (const fieldName in state.mappedFields) {
@@ -1171,42 +1234,39 @@
             });
         }
 
-        function getFieldValue(issue, path) {
-            // Handle special fields
-            if (path === 'labels') {
-                return Array.isArray(issue.labels) ? issue.labels.join(', ') : '';
+        function getFieldValue(item, path) {
+            // Handle parsed description data
+            if (path.startsWith('parsedDescriptionData.')) {
+                const parts = path.split('.');
+                let value = item.parsedDescriptionData;
+                for (let i = 1; i < parts.length; i++) {
+                    const part = parts[i];
+                    // Handle array index access
+                    if (part.endsWith(']')) {
+                        const arrayPart = part.substring(0, part.indexOf('['));
+                        const index = parseInt(part.substring(part.indexOf('[') + 1, part.indexOf(']')));
+                        if (value && value[arrayPart] && Array.isArray(value[arrayPart]) && value[arrayPart].length > index) {
+                            value = value[arrayPart][index];
+                        } else {
+                            value = null;
+                            break;
+                        }
+                    } else {
+                         if (value && value.hasOwnProperty(part)) {
+                            value = value[part];
+                        } else {
+                            value = null;
+                            break;
+                        }
+                    }
+                }
+                 return value !== null ? value : '';
             }
 
-            if (path === 'assignees') {
-                return Array.isArray(issue.assignees) ? issue.assignees.map(a => a.name).join(', ') : '';
-            }
 
-            // Handle author fields
-            if (path.startsWith('author.')) {
-                const authorField = path.split('.')[1];
-                return issue.author ? issue.author[authorField] || '' : '';
-            }
-
-            // Handle milestone fields
-            if (path.startsWith('milestone.')) {
-                const milestoneField = path.split('.')[1];
-                return issue.milestone ? issue.milestone[milestoneField] || '' : '';
-            }
-
-            // Handle time stats fields
-            if (path.startsWith('time_stats.')) {
-                const timeField = path.split('.')[1];
-                return issue.time_stats ? issue.time_stats[timeField] || '' : '';
-            }
-
-            // Handle direct fields
-            if (!path.includes('.')) {
-                return issue[path] || '';
-            }
-
-            // Handle any remaining nested fields
+            // Handle standard issue fields
             const parts = path.split('.');
-            let value = issue;
+            let value = item;
 
             for (const part of parts) {
                 if (value && value.hasOwnProperty(part)) {
@@ -1215,6 +1275,15 @@
                     value = null;
                     break;
                 }
+            }
+
+            // Handle special fields (labels, assignees, etc.)
+            if (path === 'labels' && Array.isArray(value)) {
+                return value.join(', ');
+            }
+
+            if (path === 'assignees' && Array.isArray(value)) {
+                return value.map(a => a.name).join(', ');
             }
 
             // Format dates if needed
@@ -1253,7 +1322,7 @@
             const headerRow = document.createElement('tr');
             headers.forEach(header => {
                 const th = document.createElement('th');
-                th.className = 'px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                th.className = 'px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider';
                 th.textContent = header;
                 headerRow.appendChild(th);
             });
@@ -1296,90 +1365,35 @@
                 const wb = XLSX.utils.book_new();
 
                 if (state.exportStructure === 'single-sheet') {
-                    // Prepare data for single sheet - one row per board
-                    const exportData = state.fetchedData.map(boardData => {
+                    // Prepare data for single sheet
+                    const exportData = state.fetchedData.map(item => {
                         const exportItem = {};
-
                         for (const fieldName in state.mappedFields) {
                             const mapping = state.mappedFields[fieldName];
-                            exportItem[mapping.fieldLabel] = getFieldValue(boardData, mapping.gitlabField);
+                            exportItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
                         }
-
                         return exportItem;
                     });
 
-                    // Create main worksheet
+                    // Create worksheet
                     const ws = XLSX.utils.json_to_sheet(exportData);
-                    XLSX.utils.book_append_sheet(wb, ws, 'Boards');
-
-                    // Add lists sheet
-                    const listsData = state.fetchedData.flatMap(boardData =>
-                        boardData.lists.map(list => ({
-                            'Board ID': boardData.board.id,
-                            'Board Name': boardData.board.name,
-                            'List ID': list.id,
-                            'List Name': list.name,
-                            'List Position': list.position
-                        }))
-                    );
-                    const listsWs = XLSX.utils.json_to_sheet(listsData);
-                    XLSX.utils.book_append_sheet(wb, listsWs, 'Lists');
-
-                    // Add issues sheet
-                    const issuesData = state.fetchedData.flatMap(boardData =>
-                        boardData.issues.map(issue => ({
-                            'Board ID': boardData.board.id,
-                            'Board Name': boardData.board.name,
-                            'Issue ID': issue.id,
-                            'Issue Title': issue.title,
-                            'Issue State': issue.state,
-                            'Labels': issue.labels ? issue.labels.join(', ') : '',
-                            'Assignees': issue.assignees ? issue.assignees.map(a => a.name).join(', ') : '',
-                            'Created At': issue.created_at,
-                            'Updated At': issue.updated_at
-                        }))
-                    );
-                    const issuesWs = XLSX.utils.json_to_sheet(issuesData);
-                    XLSX.utils.book_append_sheet(wb, issuesWs, 'Issues');
+                    XLSX.utils.book_append_sheet(wb, ws, state.dataType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
 
                 } else {
-                    // Multiple sheets (one per board)
-                    state.fetchedData.forEach((boardData, index) => {
-                        // Board details sheet
-                        const boardSheet = {};
-                        for (const fieldName in state.mappedFields) {
+                    // Multiple sheets (one per item)
+                    state.fetchedData.forEach((item, index) => {
+                        const itemSheetData = {};
+                         for (const fieldName in state.mappedFields) {
                             const mapping = state.mappedFields[fieldName];
-                            boardSheet[mapping.fieldLabel] = getFieldValue(boardData, mapping.gitlabField);
+                            itemSheetData[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
                         }
-                        const boardWs = XLSX.utils.json_to_sheet([boardSheet]);
-                        XLSX.utils.book_append_sheet(wb, boardWs, `Board_${boardData.board.id}_Details`);
-
-                        // Lists sheet for this board
-                        const listsData = boardData.lists.map(list => ({
-                            'List ID': list.id,
-                            'List Name': list.name,
-                            'Position': list.position
-                        }));
-                        const listsWs = XLSX.utils.json_to_sheet(listsData);
-                        XLSX.utils.book_append_sheet(wb, listsWs, `Board_${boardData.board.id}_Lists`);
-
-                        // Issues sheet for this board
-                        const issuesData = boardData.issues.map(issue => ({
-                            'Issue ID': issue.id,
-                            'Title': issue.title,
-                            'State': issue.state,
-                            'Labels': issue.labels ? issue.labels.join(', ') : '',
-                            'Assignees': issue.assignees ? issue.assignees.map(a => a.name).join(', ') : '',
-                            'Created At': issue.created_at,
-                            'Updated At': issue.updated_at
-                        }));
-                        const issuesWs = XLSX.utils.json_to_sheet(issuesData);
-                        XLSX.utils.book_append_sheet(wb, issuesWs, `Board_${boardData.board.id}_Issues`);
+                        const itemWs = XLSX.utils.json_to_sheet([itemSheetData]);
+                        XLSX.utils.book_append_sheet(wb, itemWs, `${state.dataType.slice(0, -1).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}_${item.iid}`);
                     });
                 }
 
                 // Generate file name
-                const fileName = document.getElementById('export-filename').value.trim() || 'gitlab_boards_export.xlsx';
+                const fileName = document.getElementById('export-filename').value.trim() || `gitlab_${state.dataType}_export.xlsx`;
 
                 // Export workbook
                 XLSX.writeFile(wb, fileName);
@@ -1431,3 +1445,25 @@
     </script>
 </body>
 </html>
+
+</file_content>
+
+Now that you have the latest state of the file, try the operation again with fewer, more precise SEARCH blocks. For large files especially, it may be prudent to try to limit yourself to <5 SEARCH/REPLACE blocks at a time, then wait for the user to respond with the result of the operation before following up with another replace_in_file call to make additional edits.
+(If you run into this error 3 times in a row, you may use the write_to_file tool as a fallback.)
+</error><environment_details>
+# VSCode Visible Files
+app.html
+
+# VSCode Open Tabs
+description.md
+app.html
+
+# Current Time
+5/23/2025, 11:41:46 AM (America/Chicago, UTC-5:00)
+
+# Context Window Usage
+154,413 / 1,048.576K tokens used (15%)
+
+# Current Mode
+ACT MODE
+</environment_details>
