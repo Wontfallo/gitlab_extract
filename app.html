@@ -223,14 +223,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8"> <!-- Increased gap -->
                         <div>
                             <div class="mb-6"> <!-- Increased margin -->
-                                <label for="api-key" class="block text-sm font-medium text-gray-700 mb-2">GitLab API Key</label> <!-- Increased margin -->
+                                <label for="api-key" class="block text-sm font-medium text-gray-700 mb-2">GitLab Access Token</label> <!-- Increased margin -->
                                 <div class="relative">
-                                    <input type="password" id="api-key" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="Enter your GitLab API key"> <!-- Added border color, outline none, transition -->
-                                    <button id="toggle-api-key" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 focus:outline-none" aria-label="Show API Key"> <!-- Added outline none -->
+                                    <input type="password" id="api-key" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="Enter your GitLab Access Token"> <!-- Added border color, outline none, transition -->
+                                    <button id="toggle-api-key" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 focus:outline-none" aria-label="Show Access Token"> <!-- Added outline none -->
                                         <i class="far fa-eye"></i>
                                     </button>
                                 </div>
-                                <p class="mt-2 text-xs text-gray-500">You can generate an API key in your GitLab profile settings</p> <!-- Increased margin -->
+                                <p class="mt-2 text-xs text-gray-500">You can generate an Access Token in your GitLab profile settings</p> <!-- Increased margin -->
                             </div>
 
                             <div class="mb-6"> <!-- Increased margin -->
@@ -259,7 +259,7 @@
                                 </li>
                                 <li class="flex items-start">
                                     <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i> <!-- Increased margin -->
-                                    <span>API keys require at least "read_api" and "read_repository" permissions</span>
+                                    <span>Access Tokens require at least "read_api" and "read_repository" permissions</span>
                                 </li>
                                 <li class="flex items-start">
                                     <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i> <!-- Increased margin -->
@@ -547,6 +547,16 @@
     </div>
 
     <script>
+        // Helper functions
+        function cleanUrl(url) {
+            return url.replace(/\/+$/, '');
+        }
+
+        function cleanProjectId(id) {
+            return id.replace(/\/-\/(issues|boards).*$/, '')  // Remove /-/issues or /-/boards suffix
+                    .replace(/^\/+|\/+$/g, '');               // Remove leading/trailing slashes
+        }
+
         // Global state
         const state = {
             currentStep: 1,
@@ -637,11 +647,11 @@
             if (apiKeyInput.type === 'password') {
                 apiKeyInput.type = 'text';
                 toggleApiKeyBtn.innerHTML = '<i class="far fa-eye-slash"></i>';
-                toggleApiKeyBtn.setAttribute('aria-label', 'Hide API Key');
+                toggleApiKeyBtn.setAttribute('aria-label', 'Hide Access Token');
             } else {
                 apiKeyInput.type = 'password';
                 toggleApiKeyBtn.innerHTML = '<i class="far fa-eye"></i>';
-                toggleApiKeyBtn.setAttribute('aria-label', 'Show API Key');
+                toggleApiKeyBtn.setAttribute('aria-label', 'Show Access Token');
             }
         }
 
@@ -699,7 +709,7 @@
             state.projectId = projectIdInput.value.trim();
 
             if (!state.apiKey) {
-                alert('Please enter your GitLab API key');
+                alert('Please enter your GitLab Access Token');
                 return false;
             }
 
@@ -741,146 +751,224 @@
             return true;
         }
 
-        function connectToGitLab() {
+        async function connectToGitLab() {
             if (!validateConnection()) return;
 
             // Show loading state
             connectBtn.disabled = true;
             connectBtn.innerHTML = '<div class="loading-spinner"></div>';
 
-            // Simulate API connection (in a real app, this would be an actual API call)
-            setTimeout(() => {
-                connectBtn.disabled = false;
-                connectBtn.innerHTML = '<span>Connected</span><i class="fas fa-check ml-2"></i>';
+            try {
+                // Clean up URLs and project ID
+                state.gitlabUrl = cleanUrl(state.gitlabUrl);
+                state.projectId = cleanProjectId(state.projectId);
 
-                // Proceed to next step
+                // Test connection by fetching project details
+                const projectPath = encodeURIComponent(state.projectId);
+                const response = await fetch(`${state.gitlabUrl}/api/v4/projects/${projectPath}`, {
+                    headers: {
+                        'Authorization': `Bearer ${state.apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
+                }
+
+                // Connection successful
+                connectBtn.innerHTML = '<span>Connected</span><i class="fas fa-check ml-2"></i>';
                 navigateToStep(2);
 
-                // Reset button after delay
-                setTimeout(() => {
-                    connectBtn.innerHTML = '<span>Connect</span><i class="fas fa-plug ml-2"></i>';
-                }, 1500);
+            } catch (error) {
+                alert(`Failed to connect to GitLab: ${error.message}`);
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '<span>Connect</span><i class="fas fa-plug ml-2"></i>';
+                return;
+            }
+
+            // Reset button after delay
+            setTimeout(() => {
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '<span>Connect</span><i class="fas fa-plug ml-2></i>';
             }, 1500);
         }
 
-        function fetchData() {
+        async function fetchData() {
             if (!validateDataSelection()) return;
 
             // Show loading state
             fetchDataBtn.disabled = true;
             fetchDataBtn.innerHTML = '<div class="loading-spinner"></div>';
 
-            // Simulate API call to fetch data
-            setTimeout(() => {
-                // Sample data structure for issues (would come from API in real app)
-                state.fetchedData = [
-                    {
-                        id: 1,
-                        iid: 1,
-                        title: "Sample Issue 1",
-                        description: "This is a sample issue description",
-                        state: "opened",
-                        created_at: "2023-01-15T10:00:00Z",
-                        updated_at: "2023-01-20T14:30:00Z",
-                        due_date: "2023-02-01",
-                        labels: ["bug", "high priority"],
-                        assignees: [
-                            { id: 101, name: "John Doe", username: "johndoe" },
-                            { id: 102, name: "Jane Smith", username: "janesmith" }
-                        ],
-                        author: { id: 100, name: "Admin User", username: "admin" },
-                        web_url: "https://gitlab.com/sample/project/-/issues/1"
-                    },
-                    {
-                        id: 2,
-                        iid: 2,
-                        title: "Sample Issue 2",
-                        description: "Another sample issue",
-                        state: "closed",
-                        created_at: "2023-01-10T09:15:00Z",
-                        updated_at: "2023-01-12T11:45:00Z",
-                        due_date: null,
-                        labels: ["feature"],
-                        assignees: [
-                            { id: 102, name: "Jane Smith", username: "janesmith" }
-                        ],
-                        author: { id: 103, name: "Dev User", username: "devuser" },
-                        web_url: "https://gitlab.com/sample/project/-/issues/2"
-                    }
-                ];
+            try {
+                // Clean up URLs and project ID
+                state.gitlabUrl = cleanUrl(state.gitlabUrl);
+                state.projectId = cleanProjectId(state.projectId);
+                const projectPath = encodeURIComponent(state.projectId);
+                
+                // Prepare query parameters
+                const queryParams = new URLSearchParams({
+                    per_page: '100',
+                    scope: 'all'
+                });
 
-                // Generate available fields from the first item
-                if (state.fetchedData.length > 0) {
-                    generateAvailableFields(state.fetchedData[0]);
+                // Add filters if specified
+                try {
+                    const filters = JSON.parse(document.getElementById('data-filters').value || '{}');
+                    Object.entries(filters).forEach(([key, value]) => {
+                        queryParams.append(key, value);
+                    });
+                } catch (e) {
+                    console.warn('Invalid filter format:', e);
+                }
+
+                // Fetch all issues with pagination
+                let page = 1;
+                let allIssues = [];
+                
+                while (true) {
+                    queryParams.set('page', page.toString());
+                    const response = await fetch(`${state.gitlabUrl}/api/v4/projects/${projectPath}/issues?${queryParams.toString()}`, {
+                        headers: {
+                            'Authorization': `Bearer ${state.apiKey}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch issues: ${response.status} ${response.statusText}`);
+                    }
+
+                    const issues = await response.json();
+                    if (!issues.length) {
+                        break;
+                    }
+                    
+                    allIssues = allIssues.concat(issues);
+                    page++;
+                }
+                
+                // Store fetched data
+                state.fetchedData = [{
+                    issues: allIssues
+                }];
+
+                // Generate available fields from the first issue
+                if (allIssues.length > 0) {
+                    generateAvailableFields(allIssues[0]);
                 }
 
                 fetchDataBtn.disabled = false;
                 fetchDataBtn.innerHTML = '<span>Data Fetched</span><i class="fas fa-check ml-2"></i>';
-
-                // Proceed to next step
                 navigateToStep(3);
 
-                // Reset button after delay
-                setTimeout(() => {
-                    fetchDataBtn.innerHTML = '<span>Fetch Data</span><i class="fas fa-database ml-2"></i>';
-                }, 1500);
-            }, 2000);
+                fetchDataBtn.disabled = false;
+                fetchDataBtn.innerHTML = '<span>Data Fetched</span><i class="fas fa-check ml-2"></i>';
+                navigateToStep(3);
+
+            } catch (error) {
+                alert(`Failed to fetch data: ${error.message}`);
+                fetchDataBtn.disabled = false;
+                fetchDataBtn.innerHTML = '<span>Fetch Data</span><i class="fas fa-database ml-2"></i>';
+                return;
+            }
+
+            // Reset button after delay
+            setTimeout(() => {
+                fetchDataBtn.innerHTML = '<span>Fetch Data</span><i class="fas fa-database ml-2"></i>';
+            }, 1500);
         }
 
-        function generateAvailableFields(sampleItem) {
+        function generateAvailableFields(data) {
             state.availableFields = [];
 
-            // Basic fields
-            for (const key in sampleItem) {
-                if (typeof sampleItem[key] !== 'object' && !Array.isArray(sampleItem[key])) {
+            if (data.issues && data.issues.length > 0) {
+                const issue = data.issues[0];
+
+                // Basic issue fields
+                const basicFields = [
+                    'iid', 'title', 'description', 'state', 'created_at',
+                    'updated_at', 'closed_at', 'web_url'
+                ];
+
+                basicFields.forEach(field => {
+                    if (issue.hasOwnProperty(field)) {
+                        state.availableFields.push({
+                            name: field,
+                            label: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                            type: typeof issue[field],
+                            path: field
+                        });
+                    }
+                });
+
+                // Author fields
+                if (issue.author) {
+                    ['name', 'username'].forEach(field => {
+                        if (issue.author[field]) {
+                            state.availableFields.push({
+                                name: `author_${field}`,
+                                label: `Author ${field}`,
+                                type: typeof issue.author[field],
+                                path: `author.${field}`
+                            });
+                        }
+                    });
+                }
+
+                // Labels
+                if (Array.isArray(issue.labels)) {
                     state.availableFields.push({
-                        name: key,
-                        label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                        type: typeof sampleItem[key],
-                        path: key
+                        name: 'labels',
+                        label: 'Labels',
+                        type: 'string',
+                        path: 'labels'
+                    });
+                }
+
+                // Assignees
+                if (Array.isArray(issue.assignees)) {
+                    state.availableFields.push({
+                        name: 'assignees',
+                        label: 'Assignees',
+                        type: 'string',
+                        path: 'assignees'
+                    });
+                }
+
+                // Milestone
+                if (issue.milestone) {
+                    state.availableFields.push({
+                        name: 'milestone_title',
+                        label: 'Milestone',
+                        type: 'string',
+                        path: 'milestone.title'
+                    });
+                }
+
+                // Due date
+                if (issue.due_date) {
+                    state.availableFields.push({
+                        name: 'due_date',
+                        label: 'Due Date',
+                        type: 'string',
+                        path: 'due_date'
+                    });
+                }
+
+                // Time tracking
+                if (issue.time_stats) {
+                    ['time_estimate', 'total_time_spent'].forEach(field => {
+                        state.availableFields.push({
+                            name: field,
+                            label: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                            type: 'number',
+                            path: `time_stats.${field}`
+                        });
                     });
                 }
             }
-
-            // Nested fields (author)
-            if (sampleItem.author) {
-                for (const key in sampleItem.author) {
-                    state.availableFields.push({
-                        name: `author.${key}`,
-                        label: `Author ${key.replace(/_/g, ' ')}`.replace(/\b\w/g, l => l.toUpperCase()),
-                        type: typeof sampleItem.author[key],
-                        path: `author.${key}`
-                    });
-                }
-            }
-
-            // Special fields (labels as string)
-            if (sampleItem.labels) {
-                state.availableFields.push({
-                    name: 'labels_string',
-                    label: 'Labels (Comma Separated)',
-                    type: 'string',
-                    path: 'labels'
-                });
-            }
-
-            // Special fields (assignees as string)
-            if (sampleItem.assignees) {
-                state.availableFields.push({
-                    name: 'assignees_string',
-                    label: 'Assignees (Comma Separated)',
-                    type: 'string',
-                    path: 'assignees'
-                });
-            }
-
-            // Add any custom fields you want to expose
-            state.availableFields.push({
-                name: 'web_url',
-                label: 'Web URL',
-                type: 'string',
-                path: 'web_url'
-            });
         }
 
         function renderAvailableFields() {
@@ -1070,34 +1158,55 @@
         function generatePreviewData() {
             state.previewData = [];
 
-            // For preview, just use the first 5 items
-            const itemsToPreview = state.fetchedData.slice(0, 5);
-
-            itemsToPreview.forEach(item => {
-                const previewItem = {};
-
+            // Show preview of first few issues
+            const issuesToPreview = state.fetchedData[0].issues.slice(0, 3);
+            
+            issuesToPreview.forEach(issue => {
+                const preview = {};
                 for (const fieldName in state.mappedFields) {
                     const mapping = state.mappedFields[fieldName];
-                    previewItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
+                    preview[mapping.fieldLabel] = getFieldValue(issue, mapping.gitlabField);
                 }
-
-                state.previewData.push(previewItem);
+                state.previewData.push(preview);
             });
         }
 
-        function getFieldValue(item, path) {
+        function getFieldValue(issue, path) {
             // Handle special fields
             if (path === 'labels') {
-                return item.labels ? item.labels.join(', ') : '';
+                return Array.isArray(issue.labels) ? issue.labels.join(', ') : '';
             }
 
             if (path === 'assignees') {
-                return item.assignees ? item.assignees.map(a => a.name).join(', ') : '';
+                return Array.isArray(issue.assignees) ? issue.assignees.map(a => a.name).join(', ') : '';
             }
 
-            // Handle nested fields
+            // Handle author fields
+            if (path.startsWith('author.')) {
+                const authorField = path.split('.')[1];
+                return issue.author ? issue.author[authorField] || '' : '';
+            }
+
+            // Handle milestone fields
+            if (path.startsWith('milestone.')) {
+                const milestoneField = path.split('.')[1];
+                return issue.milestone ? issue.milestone[milestoneField] || '' : '';
+            }
+
+            // Handle time stats fields
+            if (path.startsWith('time_stats.')) {
+                const timeField = path.split('.')[1];
+                return issue.time_stats ? issue.time_stats[timeField] || '' : '';
+            }
+
+            // Handle direct fields
+            if (!path.includes('.')) {
+                return issue[path] || '';
+            }
+
+            // Handle any remaining nested fields
             const parts = path.split('.');
-            let value = item;
+            let value = issue;
 
             for (const part of parts) {
                 if (value && value.hasOwnProperty(part)) {
@@ -1105,6 +1214,15 @@
                 } else {
                     value = null;
                     break;
+                }
+            }
+
+            // Format dates if needed
+            if (value && typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+                try {
+                    return new Date(value).toLocaleDateString();
+                } catch (e) {
+                    return value;
                 }
             }
 
@@ -1168,55 +1286,100 @@
             }
         }
 
-        function exportToExcel() {
+        async function exportToExcel() {
             // Show loading state
             exportBtn.disabled = true;
             exportBtn.innerHTML = '<div class="loading-spinner"></div>';
 
-            // Simulate export process
-            setTimeout(() => {
+            try {
                 // Create workbook
                 const wb = XLSX.utils.book_new();
 
                 if (state.exportStructure === 'single-sheet') {
-                    // Prepare data for single sheet
-                    const exportData = state.fetchedData.map(item => {
+                    // Prepare data for single sheet - one row per board
+                    const exportData = state.fetchedData.map(boardData => {
                         const exportItem = {};
 
                         for (const fieldName in state.mappedFields) {
                             const mapping = state.mappedFields[fieldName];
-                            exportItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
+                            exportItem[mapping.fieldLabel] = getFieldValue(boardData, mapping.gitlabField);
                         }
 
                         return exportItem;
                     });
 
-                    // Create worksheet
+                    // Create main worksheet
                     const ws = XLSX.utils.json_to_sheet(exportData);
-                    XLSX.utils.book_append_sheet(wb, ws, state.dataType);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Boards');
 
-                    // Add comments sheet if needed
-                    if (state.includeComments) {
-                        const commentsWs = XLSX.utils.json_to_sheet([]);
-                        XLSX.utils.book_append_sheet(wb, commentsWs, 'Comments');
-                    }
+                    // Add lists sheet
+                    const listsData = state.fetchedData.flatMap(boardData =>
+                        boardData.lists.map(list => ({
+                            'Board ID': boardData.board.id,
+                            'Board Name': boardData.board.name,
+                            'List ID': list.id,
+                            'List Name': list.name,
+                            'List Position': list.position
+                        }))
+                    );
+                    const listsWs = XLSX.utils.json_to_sheet(listsData);
+                    XLSX.utils.book_append_sheet(wb, listsWs, 'Lists');
+
+                    // Add issues sheet
+                    const issuesData = state.fetchedData.flatMap(boardData =>
+                        boardData.issues.map(issue => ({
+                            'Board ID': boardData.board.id,
+                            'Board Name': boardData.board.name,
+                            'Issue ID': issue.id,
+                            'Issue Title': issue.title,
+                            'Issue State': issue.state,
+                            'Labels': issue.labels ? issue.labels.join(', ') : '',
+                            'Assignees': issue.assignees ? issue.assignees.map(a => a.name).join(', ') : '',
+                            'Created At': issue.created_at,
+                            'Updated At': issue.updated_at
+                        }))
+                    );
+                    const issuesWs = XLSX.utils.json_to_sheet(issuesData);
+                    XLSX.utils.book_append_sheet(wb, issuesWs, 'Issues');
+
                 } else {
-                    // Multiple sheets (one per item)
-                    state.fetchedData.forEach((item, index) => {
-                        const exportItem = {};
-
+                    // Multiple sheets (one per board)
+                    state.fetchedData.forEach((boardData, index) => {
+                        // Board details sheet
+                        const boardSheet = {};
                         for (const fieldName in state.mappedFields) {
                             const mapping = state.mappedFields[fieldName];
-                            exportItem[mapping.fieldLabel] = getFieldValue(item, mapping.gitlabField);
+                            boardSheet[mapping.fieldLabel] = getFieldValue(boardData, mapping.gitlabField);
                         }
+                        const boardWs = XLSX.utils.json_to_sheet([boardSheet]);
+                        XLSX.utils.book_append_sheet(wb, boardWs, `Board_${boardData.board.id}_Details`);
 
-                        const ws = XLSX.utils.json_to_sheet([exportItem]);
-                        XLSX.utils.book_append_sheet(wb, ws, `${state.dataType}_${index + 1}`);
+                        // Lists sheet for this board
+                        const listsData = boardData.lists.map(list => ({
+                            'List ID': list.id,
+                            'List Name': list.name,
+                            'Position': list.position
+                        }));
+                        const listsWs = XLSX.utils.json_to_sheet(listsData);
+                        XLSX.utils.book_append_sheet(wb, listsWs, `Board_${boardData.board.id}_Lists`);
+
+                        // Issues sheet for this board
+                        const issuesData = boardData.issues.map(issue => ({
+                            'Issue ID': issue.id,
+                            'Title': issue.title,
+                            'State': issue.state,
+                            'Labels': issue.labels ? issue.labels.join(', ') : '',
+                            'Assignees': issue.assignees ? issue.assignees.map(a => a.name).join(', ') : '',
+                            'Created At': issue.created_at,
+                            'Updated At': issue.updated_at
+                        }));
+                        const issuesWs = XLSX.utils.json_to_sheet(issuesData);
+                        XLSX.utils.book_append_sheet(wb, issuesWs, `Board_${boardData.board.id}_Issues`);
                     });
                 }
 
                 // Generate file name
-                const fileName = document.getElementById('export-filename').value.trim() || 'gitlab_export.xlsx';
+                const fileName = document.getElementById('export-filename').value.trim() || 'gitlab_boards_export.xlsx';
 
                 // Export workbook
                 XLSX.writeFile(wb, fileName);
@@ -1224,11 +1387,17 @@
                 exportBtn.disabled = false;
                 exportBtn.innerHTML = '<span>Export Complete</span><i class="fas fa-check ml-2"></i>';
 
-                // Reset button after delay
-                setTimeout(() => {
-                    exportBtn.innerHTML = '<span>Export to Excel</span><i class="fas fa-file-excel ml-2"></i>';
-                }, 1500);
-            }, 2000);
+            } catch (error) {
+                alert(`Failed to export data: ${error.message}`);
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<span>Export Failed</span><i class="fas fa-exclamation-triangle ml-2"></i>';
+                return;
+            }
+
+            // Reset button after delay
+            setTimeout(() => {
+                exportBtn.innerHTML = '<span>Export to Excel</span><i class="fas fa-file-excel ml-2"></i>';
+            }, 1500);
         }
 
         // Dark Mode
